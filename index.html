@@ -56,22 +56,47 @@
       document.getElementById('result').textContent = '🎉 Ура! Ты написал свой первый код!';
     }
       // Функция для приветствия пользователя
+        // Функция для приветствия + отладка
     function greetUser() {
-      if (window.MaxWebApp && window.MaxWebApp.initDataUnsafe) {
-        const user = window.MaxWebApp.initDataUnsafe.user;
-        if (user && user.first_name) {
-          document.getElementById('greeting').textContent = 
-            'Привет, ' + user.first_name + '! 👋';
-          return;
+      const debugInfo = [];
+      
+      // Проверяем, какие объекты MAX доступны
+      if (window.MaxWebApp) debugInfo.push('✓ MaxWebApp найден');
+      if (window.MAX) debugInfo.push('✓ MAX найден');
+      if (window.WebApp) debugInfo.push('✓ WebApp найден');
+      if (window.MaxApp) debugInfo.push('✓ MaxApp найден');
+      
+      // Пытаемся получить данные пользователя
+      let userName = null;
+      
+      // Пробуем разные варианты доступа к данным
+      const possibleObjects = [window.MaxWebApp, window.MAX, window.WebApp, window.MaxApp];
+      
+      for (const obj of possibleObjects) {
+        if (obj && obj.initDataUnsafe && obj.initDataUnsafe.user) {
+          const user = obj.initDataUnsafe.user;
+          userName = user.first_name || user.username || user.name || 'Пользователь';
+          debugInfo.push(`✓ Данные пользователя: ${JSON.stringify(user)}`);
+          break;
         }
       }
-      // Если открыто не в мессенджере
-      document.getElementById('greeting').textContent = 
-        'Привет, друг! Это тестовый режим.';
+      
+      // Обновляем приветствие
+      const greetingEl = document.getElementById('greeting');
+      if (userName) {
+        greetingEl.textContent = 'Привет, ' + userName + '! 👋';
+      } else {
+        greetingEl.textContent = 'Привет, друг! (режим отладки)';
+      }
+      
+      // Показываем техническую информацию (только для тебя)
+      if (debugInfo.length > 0) {
+        const debugDiv = document.createElement('div');
+        debugDiv.style.cssText = 'margin-top:20px; padding:10px; background:#f0f0f0; border-radius:8px; font-size:11px; font-family:monospace;';
+        debugDiv.innerHTML = '<strong>🔧 Отладка:</strong><br>' + debugInfo.join('<br>');
+        greetingEl.parentNode.appendChild(debugDiv);
+      }
     }
-
-    // Запускаем приветствие при загрузке
-    greetUser();
   </script>
 </body>
 </html>
