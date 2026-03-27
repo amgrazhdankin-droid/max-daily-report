@@ -143,4 +143,97 @@
         const today = new Date();
         const dateStr = today.toLocaleDateString('ru-RU', { 
           day: 'numeric', 
-          month: 'long
+          month: 'long', 
+          year: 'numeric' 
+        });
+        document.getElementById('reportDate').value = dateStr;
+        addDebug('✅ Дата: ' + dateStr);
+      } catch(e) {
+        addDebug('❌ Ошибка даты: ' + e.message);
+      }
+      
+      // ===== ЗАГРУЗКА ОТЧЁТОВ =====
+      addDebug('3. Загружаем отчёты...');
+      loadReports();
+      
+    } catch(e) {
+      addDebug('💥 КРИТИЧЕСКАЯ ОШИБКА: ' + e.message);
+      addDebug('Stack: ' + e.stack);
+    }
+    
+    // ===== СОХРАНЕНИЕ =====
+    function saveReport() {
+      addDebug('🔵 saveReport() вызван');
+      
+      const text = document.getElementById('reportText').value.trim();
+      const date = document.getElementById('reportDate').value;
+      const statusEl = document.getElementById('status');
+      
+      if (!text) {
+        statusEl.textContent = '⚠️ Введите текст отчёта';
+        statusEl.className = 'error';
+        addDebug('⚠️ Пустой текст');
+        return;
+      }
+      
+      const userId = window.WebApp?.initDataUnsafe?.user?.id || 'guest';
+      addDebug('👤 User ID: ' + userId);
+      
+      const report = {
+        id: Date.now(),
+        userId: userId,
+        date: date,
+        text: text,
+        createdAt: new Date().toISOString()
+      };
+      
+      try {
+        const key = 'reports_' + userId;
+        const existing = JSON.parse(localStorage.getItem(key) || '[]');
+        existing.unshift(report);
+        localStorage.setItem(key, JSON.stringify(existing));
+        addDebug('✅ Отчёт сохранён в localStorage');
+        
+        statusEl.textContent = '✅ Сохранено!';
+        statusEl.className = 'success';
+        
+        document.getElementById('reportText').value = '';
+        loadReports();
+        
+      } catch(e) {
+        addDebug('❌ Ошибка сохранения: ' + e.message);
+        statusEl.textContent = '❌ Ошибка: ' + e.message;
+        statusEl.className = 'error';
+      }
+    }
+    
+    // ===== ЗАГРУЗКА СПИСКА =====
+    function loadReports() {
+      try {
+        const userId = window.WebApp?.initDataUnsafe?.user?.id || 'guest';
+        const key = 'reports_' + userId;
+        const reports = JSON.parse(localStorage.getItem(key) || '[]');
+        
+        addDebug('📋 Отчётов: ' + reports.length);
+        
+        const container = document.getElementById('reportsList');
+        
+        if (reports.length === 0) {
+          container.innerHTML = '<p style="color:#999;font-size:13px;">Нет отчётов</p>';
+          return;
+        }
+        
+        container.innerHTML = reports.map(r => 
+          '<div style="background:#f8f9fa;padding:8px;border-radius:6px;margin-bottom:8px;">' +
+          '<small style="color:#666">' + r.date + '</small><br>' +
+          r.text.substring(0, 50) + (r.text.length > 50 ? '...' : '') +
+          '</div>'
+        ).join('');
+        
+      } catch(e) {
+        addDebug('❌ Ошибка загрузки списка: ' + e.message);
+      }
+    }
+  </script>
+</body>
+</html>
