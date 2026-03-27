@@ -94,6 +94,11 @@
       color: #666;
       font-size: 14px;
     }
+    .photo-hint {
+      font-size: 12px;
+      color: #999;
+      margin-top: 4px;
+    }
     
     /* Превью нескольких фото */
     .photos-preview {
@@ -126,6 +131,16 @@
       cursor: pointer;
       font-size: 16px;
       line-height: 1;
+    }
+    .photo-size {
+      position: absolute;
+      bottom: 4px;
+      left: 4px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
     }
     
     .btn {
@@ -164,6 +179,11 @@
       background: #f8d7da; 
       color: #721c24; 
       display: block !important; 
+    }
+    .warning {
+      background: #fff3cd;
+      color: #856404;
+      display: block !important;
     }
     
     /* История отчётов - компактная */
@@ -290,11 +310,12 @@
     
     <!-- Загрузка нескольких фото -->
     <div class="form-group">
-      <label>📷 Фотографии</label>
+      <label>📷 Фотографии <span style="font-weight:normal;color:#999;font-size:12px">(сжимаются автоматически)</span></label>
       <div class="photo-upload" onclick="document.getElementById('photoInput').click()">
         <input type="file" id="photoInput" accept="image/*" multiple onchange="handlePhotosSelect(event)">
         <div class="photo-icon">📸</div>
-        <div class="photo-text">Нажмите, чтобы добавить фото (можно несколько)</div>
+        <div class="photo-text">Нажмите, чтобы добавить фото</div>
+        <div class="photo-hint">Макс. 5 фото, до 500 KB каждое</div>
       </div>
       <div class="photos-preview" id="photosPreview"></div>
     </div>
@@ -312,6 +333,9 @@
 
   <script>
     let currentPhotosBase64 = [];
+    let currentPhotosSizes = [];
+    const MAX_PHOTOS = 5;
+    const MAX_PHOTO_SIZE_KB = 500; // Максимальный размер фото после сжатия
     
     // ===== ИНИЦИАЛИЗАЦИЯ =====
     document.addEventListener('DOMContentLoaded', function() {
@@ -327,7 +351,6 @@
     function initApp() {
       console.log('🚀 Инициализация приложения');
       
-      // WebApp
       if (typeof window.WebApp !== 'undefined') {
         console.log('✅ WebApp найден');
         try {
@@ -337,7 +360,6 @@
           console.log('⚠️ Ошибка ready:', e.message);
         }
         
-        // Приветствие
         if (window.WebApp.initDataUnsafe && window.WebApp.initDataUnsafe.user) {
           const user = window.WebApp.initDataUnsafe.user;
           const name = user.first_name || user.username || 'друг';
@@ -346,7 +368,6 @@
         }
       }
       
-      // Дата
       const dateEl = document.getElementById('reportDate');
       if (dateEl) {
         const today = new Date();
@@ -359,34 +380,104 @@
         dateEl.value = dateStr;
       }
       
-      // Загрузка списка
       loadReports();
     }
     
+    // ===== СЖАТИЕ ФОТОГРАФИЙ =====
+    function compressImage(file, maxWidth = 1024, quality = 0.7) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+          const img = new Image();
+          img.src = event.target.result;
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            
+            // Уменьшаем размер если больше maxWidth
+            if (width > maxWidth) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Сжимаем в JPEG с указанным качеством
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+            resolve(compressedDataUrl);
+          };
+          img.onerror = reject;
+        };
+        reader.onerror = reject;
+      });
+    }
+    
+    function getBase64Size(base64String) {
+      // Примерный размер в KB
+      const padding = (base64String.match(/=+$/) || [''])[0].length;
+      const bytes = (base64String.length * 0.75) - padding;
+      return Math.round(bytes / 1024);
+    }
+    
     // ===== ОБРАБОТКА НЕСКОЛЬКИХ ФОТО =====
-    function handlePhotosSelect(event) {
+    async function handlePhotosSelect(event) {
       const files = Array.from(event.target.files);
       if (files.length === 0) return;
       
-      console.log('📷 Выбрано файлов:', files.length);
+      const availableSlots = MAX_PHOTOS - currentPhotosBase64.length;
+      if (availableSlots <= 0) {
+        showStatus(`⚠️ Можно добавить максимум ${MAX_PHOTOS} фото`, 'warning');
+        return;
+      }
       
-      let loadedCount = 0;
+      const filesToAdd = files.slice(0, availableSlots);
+      console.log('📷 Обработка фото:', filesToAdd.length);
       
-      files.forEach(file => {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          currentPhotosBase64.push(e.target.result);
-          loadedCount++;
+      showStatus('🔄 Сжатие фотографий...', 'warning');
+      
+      let successCount = 0;
+      
+      for (const file of filesToAdd) {
+        try {
+          // Сжимаем фото
+          const compressed = await compressImage(file, 1024, 0.7);
+          const sizeKB = getBase64Size(compressed);
           
-          if (loadedCount === files.length) {
-            updatePhotosPreview();
-            if (window.WebApp && window.WebApp.HapticFeedback) {
-              window.WebApp.HapticFeedback.impactOccurred('light');
-            }
+          // Проверяем размер после сжатия
+          if (sizeKB > MAX_PHOTO_SIZE_KB * 1.5) {
+            console.log('⚠️ Фото слишком большое:', sizeKB, 'KB');
+            continue;
           }
-        };
-        reader.readAsDataURL(file);
-      });
+          
+          currentPhotosBase64.push(compressed);
+          currentPhotosSizes.push(sizeKB);
+          successCount++;
+          
+        } catch(e) {
+          console.log('❌ Ошибка сжатия:', e.message);
+        }
+      }
+      
+      updatePhotosPreview();
+      
+      if (successCount > 0) {
+        showStatus(`✅ Добавлено ${successCount} фото`, 'success');
+        if (window.WebApp && window.WebApp.HapticFeedback) {
+          window.WebApp.HapticFeedback.impactOccurred('light');
+        }
+      } else {
+        showStatus('⚠️ Не удалось добавить фото', 'warning');
+      }
+      
+      setTimeout(() => {
+        const statusEl = document.getElementById('status');
+        if (statusEl) statusEl.className = '';
+      }, 2000);
     }
     
     function updatePhotosPreview() {
@@ -397,16 +488,24 @@
         return;
       }
       
+      const totalSizeKB = currentPhotosSizes.reduce((a, b) => a + b, 0);
+      
       container.innerHTML = currentPhotosBase64.map((photo, index) => `
         <div class="photo-preview-item">
           <img src="${photo}" alt="Фото ${index + 1}">
           <button class="photo-remove-btn" onclick="removePhoto(${index})">×</button>
+          <div class="photo-size">${currentPhotosSizes[index]} KB</div>
         </div>
-      `).join('');
+      `).join('') + `
+        <div style="grid-column: 1/-1; text-align: center; font-size: 12px; color: #666; margin-top: 8px;">
+          Всего: ${totalSizeKB} KB (${currentPhotosBase64.length}/${MAX_PHOTOS})
+        </div>
+      `;
     }
     
     function removePhoto(index) {
       currentPhotosBase64.splice(index, 1);
+      currentPhotosSizes.splice(index, 1);
       updatePhotosPreview();
       
       if (window.WebApp && window.WebApp.HapticFeedback) {
@@ -415,7 +514,7 @@
     }
     
     // ===== СОХРАНЕНИЕ ОТЧЁТА =====
-    function saveReport() {
+    async function saveReport() {
       console.log('💾 saveReport() вызван');
       
       const objectNameEl = document.getElementById('objectName');
@@ -433,18 +532,12 @@
       const text = textEl ? textEl.value.trim() : '';
       
       if (!objectName) {
-        if (statusEl) {
-          statusEl.textContent = '⚠️ Введите название объекта';
-          statusEl.className = 'error';
-        }
+        showStatus('⚠️ Введите название объекта', 'error');
         return;
       }
       
       if (!text) {
-        if (statusEl) {
-          statusEl.textContent = '⚠️ Введите описание работ';
-          statusEl.className = 'error';
-        }
+        showStatus('⚠️ Введите описание работ', 'error');
         return;
       }
       
@@ -465,24 +558,41 @@
         workers: workers,
         text: text,
         photos: [...currentPhotosBase64],
+        photoSizes: [...currentPhotosSizes],
         createdAt: new Date().toISOString()
       };
       
       try {
         const key = 'reports_' + userId;
         const existing = JSON.parse(localStorage.getItem(key) || '[]');
-        existing.unshift(report);
-        localStorage.setItem(key, JSON.stringify(existing));
-        console.log('✅ Отчёт сохранён. Фото:', currentPhotosBase64.length);
         
-        if (statusEl) {
+        // Проверяем, хватит ли места
+        const reportSize = JSON.stringify(report).length;
+        const existingSize = JSON.stringify(existing).length;
+        const newSize = existingSize + reportSize;
+        const maxSize = 5 * 1024 * 1024; // 5 MB (безопасный лимит для iPhone)
+        
+        if (newSize > maxSize && currentPhotosBase64.length > 0) {
+          // Пробуем сохранить без фото
+          showStatus('⚠️ Мало места. Сохраняю без фото...', 'warning');
+          
+          const reportWithoutPhotos = { ...report, photos: [], photoSizes: [] };
+          existing.unshift(reportWithoutPhotos);
+          localStorage.setItem(key, JSON.stringify(existing));
+          
+          showStatus('✅ Отчёт сохранён (без фото - мало места)', 'warning');
+          
+        } else {
+          existing.unshift(report);
+          localStorage.setItem(key, JSON.stringify(existing));
+          console.log('✅ Отчёт сохранён. Фото:', currentPhotosBase64.length);
+          
           const photoCount = currentPhotosBase64.length;
-          statusEl.textContent = '✅ Отчёт сохранён!' + (photoCount > 0 ? ` 📷 ${photoCount}` : '');
-          statusEl.className = 'success';
-        }
-        
-        if (window.WebApp && window.WebApp.HapticFeedback) {
-          window.WebApp.HapticFeedback.notificationOccurred('success');
+          showStatus('✅ Отчёт сохранён!' + (photoCount > 0 ? ` 📷 ${photoCount}` : ''), 'success');
+          
+          if (window.WebApp && window.WebApp.HapticFeedback) {
+            window.WebApp.HapticFeedback.notificationOccurred('success');
+          }
         }
         
         // Очистка формы
@@ -491,6 +601,7 @@
         if (workersEl) workersEl.value = '';
         if (textEl) textEl.value = '';
         currentPhotosBase64 = [];
+        currentPhotosSizes = [];
         updatePhotosPreview();
         
         loadReports();
@@ -505,14 +616,25 @@
         
       } catch(e) {
         console.log('❌ Ошибка:', e.message);
-        if (statusEl) {
-          statusEl.textContent = '❌ Ошибка: ' + e.message;
-          statusEl.className = 'error';
+        
+        if (e.name === 'QuotaExceededError' || e.message.includes('quota')) {
+          showStatus('⚠️ Память заполнена. Удалите старые отчёты или сохраните без фото', 'error');
+        } else {
+          showStatus('❌ Ошибка: ' + e.message, 'error');
         }
+        
         if (saveBtn) {
           saveBtn.disabled = false;
           saveBtn.textContent = '💾 Сохранить отчёт';
         }
+      }
+    }
+    
+    function showStatus(message, type) {
+      const statusEl = document.getElementById('status');
+      if (statusEl) {
+        statusEl.textContent = message;
+        statusEl.className = type;
       }
     }
     
@@ -576,7 +698,7 @@
         console.log('❌ Ошибка загрузки:', e.message);
         const container = document.getElementById('reportsList');
         if (container) {
-          container.innerHTML = '<div class="empty" style="color:red">Ошибка</div>';
+          container.innerHTML = '<div class="empty" style="color:red">Ошибка: ' + e.message + '</div>';
         }
       }
     }
@@ -588,12 +710,10 @@
       
       const isExpanded = item.classList.contains('expanded');
       
-      // Сворачиваем все отчёты
       document.querySelectorAll('.report-item').forEach(el => {
         el.classList.remove('expanded');
       });
       
-      // Если был свёрнут, раскрываем этот
       if (!isExpanded) {
         item.classList.add('expanded');
       }
