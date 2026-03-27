@@ -37,6 +37,79 @@
     textarea { min-height: 100px; resize: vertical; }
     textarea:focus, input:focus { outline: none; border-color: #007AFF; }
     
+    /* Автодополнение */
+    .autocomplete-wrapper {
+      position: relative;
+    }
+    .autocomplete-list {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      margin-top: 4px;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 100;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .autocomplete-item {
+      padding: 10px 12px;
+      cursor: pointer;
+      border-bottom: 1px solid #f0f0f0;
+      transition: background 0.2s;
+    }
+    .autocomplete-item:hover {
+      background: #f0f7ff;
+    }
+    .autocomplete-item:last-child {
+      border-bottom: none;
+    }
+    
+    /* Список работ */
+    .work-item {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 8px;
+      border-left: 3px solid #007AFF;
+    }
+    .work-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .work-desc {
+      flex: 1;
+    }
+    .work-percent {
+      width: 80px;
+    }
+    .work-remove {
+      background: #dc3545;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .work-remove:active { background: #c82333; }
+    .add-work-btn {
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      width: 100%;
+      margin-top: 8px;
+    }
+    .add-work-btn:active { background: #218838; }
+    
     .people-row { display: flex; gap: 12px; }
     .people-field { flex: 1; }
     input[type="number"] { -moz-appearance: textfield; }
@@ -84,6 +157,12 @@
       cursor: pointer;
       font-size: 16px;
     }
+    .photo-counter {
+      text-align: center;
+      font-size: 12px;
+      color: #666;
+      margin-top: 8px;
+    }
     
     .btn {
       background: #007AFF;
@@ -121,7 +200,10 @@
     
     <div class="form-group">
       <label for="objectName">🏗️ Название объекта</label>
-      <input type="text" id="objectName" placeholder="Например: ЖК 'Северный', ул. Строителей, 15">
+      <div class="autocomplete-wrapper">
+        <input type="text" id="objectName" placeholder="Начните вводить название объекта">
+        <div class="autocomplete-list" id="autocompleteList" style="display: none;"></div>
+      </div>
     </div>
     
     <div class="form-group">
@@ -142,8 +224,9 @@
     </div>
     
     <div class="form-group">
-      <label for="reportText">✍️ Описание работ</label>
-      <textarea id="reportText" placeholder="Какие работы выполнялись сегодня?"></textarea>
+      <label>📋 Выполненные работы</label>
+      <div id="worksList"></div>
+      <button type="button" class="add-work-btn" onclick="addWorkItem()">➕ Добавить работу</button>
     </div>
     
     <div class="form-group">
@@ -152,9 +235,10 @@
         <input type="file" id="photoInput" accept="image/*" multiple onchange="handlePhotosSelect(event)">
         <div class="photo-icon">📸</div>
         <div class="photo-text">Нажмите, чтобы добавить фото</div>
-        <div class="photo-hint">Макс. 5 фото (сжимаются автоматически)</div>
+        <div class="photo-hint">Макс. 10 фото (сжимаются автоматически)</div>
       </div>
       <div class="photos-preview" id="photosPreview"></div>
+      <div class="photo-counter" id="photoCounter">0 / 10</div>
     </div>
     
     <button class="btn" id="saveBtn" onclick="sendReport()">📤 Отправить отчёт в группу</button>
@@ -163,18 +247,20 @@
 
   <script>
     // ============================================
-    // ⚙️ НАСТРОЙКИ (ВСТАВЬ СВОЙ ТОКЕН СЮДА!)
+    // ⚙️ НАСТРОЙКИ
     // ============================================
-    const BOT_TOKEN = 'f9LHodD0cOKRaQFIkbCEJ5fQpwkORYdX-n3WSKpox6DovbL3Ql6ClzpYsiy4ShYPgUKcQnNCme_IYKugWQAh';  // ← ВСТАВЬ ТОКЕН ИЗ dev.max.ru
-    const GROUP_ID = '-72662613274024';          // ← ID твоей группы
+    const BOT_TOKEN = 'f9LHodD0cOKRaQFIkbCEJ5fQpwkORYdX-n3WSKpox6DovbL3Ql6ClzpYsiy4ShYPgUKcQnNCme_IYKugWQAh';
+    const GROUP_ID = '-72662613274024';
     // ============================================
     
     let currentPhotosBase64 = [];
-    const MAX_PHOTOS = 5;
+    const MAX_PHOTOS = 10;
+    let workItemCount = 0;
     
     // ===== ИНИЦИАЛИЗАЦИЯ =====
     document.addEventListener('DOMContentLoaded', function() {
       initApp();
+      addWorkItem(); // Добавляем первую строку работ
     });
     
     function initApp() {
@@ -193,6 +279,125 @@
         day: 'numeric', month: 'long', year: 'numeric', weekday: 'long'
       });
       document.getElementById('reportDate').value = dateStr;
+      
+      // Инициализация автодополнения
+      initAutocomplete();
+    }
+    
+    // ===== АВТОДОПОЛНЕНИЕ ОБЪЕКТОВ =====
+    function initAutocomplete() {
+      const input = document.getElementById('objectName');
+      const list = document.getElementById('autocompleteList');
+      
+      input.addEventListener('input', function() {
+        const value = this.value.trim();
+        if (value.length < 1) {
+          list.style.display = 'none';
+          return;
+        }
+        
+        const objects = getStoredObjects();
+        const filtered = objects.filter(obj => 
+          obj.toLowerCase().includes(value.toLowerCase())
+        );
+        
+        if (filtered.length === 0) {
+          list.style.display = 'none';
+          return;
+        }
+        
+        list.innerHTML = filtered.map(obj => `
+          <div class="autocomplete-item" onclick="selectObject('${obj.replace(/'/g, "\\'")}')">
+            ${highlightMatch(obj, value)}
+          </div>
+        `).join('');
+        
+        list.style.display = 'block';
+      });
+      
+      // Закрытие при клике вне
+      document.addEventListener('click', function(e) {
+        if (!e.target.closest('.autocomplete-wrapper')) {
+          list.style.display = 'none';
+        }
+      });
+      
+      // Сохранение при потере фокуса
+      input.addEventListener('blur', function() {
+        setTimeout(() => {
+          const value = this.value.trim();
+          if (value) {
+            saveObjectToHistory(value);
+          }
+        }, 200);
+      });
+    }
+    
+    function getStoredObjects() {
+      const stored = localStorage.getItem('object_names');
+      return stored ? JSON.parse(stored) : [];
+    }
+    
+    function saveObjectToHistory(name) {
+      let objects = getStoredObjects();
+      if (!objects.includes(name)) {
+        objects.unshift(name);
+        objects = objects.slice(0, 50); // Храним последние 50
+        localStorage.setItem('object_names', JSON.stringify(objects));
+      }
+    }
+    
+    function selectObject(name) {
+      document.getElementById('objectName').value = name;
+      document.getElementById('autocompleteList').style.display = 'none';
+      saveObjectToHistory(name);
+    }
+    
+    function highlightMatch(text, query) {
+      const regex = new RegExp(`(${query})`, 'gi');
+      return text.replace(regex, '<strong>$1</strong>');
+    }
+    
+    // ===== СПИСОК РАБОТ =====
+    function addWorkItem() {
+      workItemCount++;
+      const container = document.getElementById('worksList');
+      
+      const workDiv = document.createElement('div');
+      workDiv.className = 'work-item';
+      workDiv.id = `work-${workItemCount}`;
+      workDiv.innerHTML = `
+        <div class="work-row">
+          <input type="text" class="work-desc" placeholder="Описание работы (например: Нанесение гидроизоляции)">
+          <input type="number" class="work-percent" placeholder="%" min="0" max="100">
+        </div>
+        ${workItemCount > 1 ? `<button type="button" class="work-remove" onclick="removeWorkItem(${workItemCount})">🗑️ Удалить</button>` : ''}
+      `;
+      
+      container.appendChild(workDiv);
+    }
+    
+    function removeWorkItem(id) {
+      const item = document.getElementById(`work-${id}`);
+      if (item) {
+        item.remove();
+      }
+    }
+    
+    function getWorksData() {
+      const works = [];
+      document.querySelectorAll('.work-item').forEach(item => {
+        const desc = item.querySelector('.work-desc').value.trim();
+        const percent = item.querySelector('.work-percent').value;
+        
+        if (desc) {
+          works.push({
+            description: desc,
+            percent: percent ? `${percent}%` : ''
+          });
+        }
+      });
+      return works;
     }
     
     // ===== СЖАТИЕ ФОТО =====
@@ -255,8 +460,11 @@
     
     function updatePhotosPreview() {
       const container = document.getElementById('photosPreview');
+      const counter = document.getElementById('photoCounter');
+      
       if (currentPhotosBase64.length === 0) {
         container.innerHTML = '';
+        counter.textContent = '0 / 10';
         return;
       }
       
@@ -266,6 +474,8 @@
           <button class="photo-remove-btn" onclick="removePhoto(${index})">×</button>
         </div>
       `).join('');
+      
+      counter.textContent = `${currentPhotosBase64.length} / ${MAX_PHOTOS}`;
     }
     
     function removePhoto(index) {
@@ -279,14 +489,14 @@
       const date = document.getElementById('reportDate').value;
       const itr = parseInt(document.getElementById('itrCount').value) || 0;
       const workers = parseInt(document.getElementById('workersCount').value) || 0;
-      const text = document.getElementById('reportText').value.trim();
+      const works = getWorksData();
       
       if (!objectName) {
         showStatus('⚠️ Введите название объекта', 'error');
         return;
       }
-      if (!text) {
-        showStatus('⚠️ Введите описание работ', 'error');
+      if (works.length === 0) {
+        showStatus('⚠️ Добавьте хотя бы одну работу', 'error');
         return;
       }
       
@@ -297,15 +507,24 @@
       
       const user = window.WebApp?.initDataUnsafe?.user || {};
       const userName = user.first_name || user.username || 'Аноним';
-      
+      // Формируем имя автора: Фамилия И.
+const authorName = user.last_name && user.first_name 
+  ? `${user.last_name} ${user.first_name.charAt(0)}.`
+  : (user.first_name || user.last_name || 'Аноним');
+
       // Формируем сообщение
       let message = `📝 *НОВЫЙ ОТЧЁТ*\n\n`;
-      message += `👤 *Прораб:* ${userName}\n`;
+      
       message += `🏗️ *Объект:* ${objectName}\n`;
       message += `📅 *Дата:* ${date}\n`;
       message += `👥 *Люди:* ИТР: ${itr}, Рабочие: ${workers}\n\n`;
-      message += `✍️ *Работы:*\n${text}`;
+      message += `📋 *Выполненные работы:*\n`;
       
+      works.forEach((work, index) => {
+        const percentText = work.percent ? ` - ${work.percent}` : '';
+        message += `${index + 1}. ${work.description}${percentText}\n`;
+      });
+      message += `\n━━━━━━━━━━━━━━━━\n👤 *Отчет составил:* ${authorName}`;
       try {
         // 1. Отправляем текст в группу
         const textResponse = await fetch(`https://platform-api.max.ru/bot/${BOT_TOKEN}/sendMessage`, {
@@ -347,9 +566,11 @@
         document.getElementById('objectName').value = '';
         document.getElementById('itrCount').value = '';
         document.getElementById('workersCount').value = '';
-        document.getElementById('reportText').value = '';
+        document.getElementById('worksList').innerHTML = '';
         currentPhotosBase64 = [];
         updatePhotosPreview();
+        workItemCount = 0;
+        addWorkItem(); // Добавляем пустую строку для следующего отчёта
         
       } catch(error) {
         console.error('❌ Ошибка:', error);
@@ -368,7 +589,7 @@
     // ===== ОТПРАВКА ФОТО =====
     async function sendPhoto(base64Data) {
       const base64Image = base64Data.replace(/^image\/\w+;base64,/, '');
-      const blob = await fetch('data:image/jpeg;base64,' + base64Image).then(r => r.blob());
+      const blob = await fetch('image/jpeg;base64,' + base64Image).then(r => r.blob());
       const formData = new FormData();
       formData.append('chat_id', GROUP_ID);
       formData.append('photo', blob, 'photo.jpg');
