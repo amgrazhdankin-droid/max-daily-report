@@ -3,53 +3,102 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Тест MAX</title>
+  <title>Мой ежедневный отчёт</title>
+  
+  <!-- ✅ Подключаем библиотеку MAX (правильный путь) -->
   <script src="https://st.max.ru/js/max-web-app.js"></script>
+  
   <style>
-    body { font-family: sans-serif; padding: 16px; background: #fff; }
-    .box { background: #f0f0f0; padding: 12px; border-radius: 8px; margin: 8px 0; font-size: 13px; }
-    .ok { color: green; font-weight: bold; }
-    .err { color: red; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
+      margin: 0;
+    }
+    .container {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      font-size: 20px;
+      margin: 0 0 8px 0;
+    }
+    #greeting {
+      color: #666;
+      margin: 0 0 20px 0;
+      font-size: 15px;
+    }
+    .btn {
+      background: #007AFF;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 10px;
+    }
+    .btn:active {
+      background: #0056b3;
+    }
+    #result {
+      margin-top: 16px;
+      color: #007AFF;
+      font-weight: 500;
+      min-height: 20px;
+    }
   </style>
 </head>
 <body>
-  <h3>🔍 Тест подключения</h3>
-  <div id="output"></div>
+  <div class="container">
+    <h1>📝 Ежедневный отчёт кровельщика</h1>
+    
+    <!-- ✅ Сюда будем писать приветствие с именем -->
+    <p id="greeting">Загрузка...</p>
+    
+    <button class="btn" onclick="sayHello()">Нажми меня!</button>
+    <p id="result"></p>
+  </div>
 
   <script>
-    const out = document.getElementById('output');
-    
-    // 1. Показываем, какие объекты есть
-    const objects = ['MaxWebApp', 'MAX', 'WebApp', 'MaxApp', 'TelegramWebApp'];
-    objects.forEach(name => {
-      const exists = window[name] ? '✓' : '✗';
-      out.innerHTML += `<div class="${exists === '✓' ? 'ok' : 'err'}">${exists} ${name}</div>`;
-    });
-    
-    // 2. Пытаемся найти данные пользователя
-    let found = false;
-    objects.forEach(name => {
-      const obj = window[name];
-      if (obj && obj.initDataUnsafe && obj.initDataUnsafe.user) {
-        const user = obj.initDataUnsafe.user;
-        out.innerHTML += `<div class="box"><strong>✓ Нашел пользователя в ${name}:</strong><br>` + 
-          JSON.stringify(user, null, 2) + '</div>';
-        found = true;
-        
-        // Пробуем сказать приложению, что оно готово
-        if (obj.ready) obj.ready();
+    // ✅ Инициализация приложения
+    if (window.WebApp) {
+      window.WebApp.ready();
+      // ✅ Расширяем приложение на весь экран (опционально)
+      if (window.WebApp.expand) {
+        window.WebApp.expand();
       }
-    });
-    
-    if (!found) {
-      out.innerHTML += `<div class="box">⚠️ Данные пользователя не найдены.<br>
-        <small>initDataUnsafe: ${!!(window.MaxWebApp?.initDataUnsafe || window.MAX?.initDataUnsafe || window.WebApp?.initDataUnsafe)}</small></div>`;
     }
-    
-    // 3. Показываем ВСЕ глобальные переменные со словом "max" или "web"
-    const allVars = Object.keys(window).filter(k => k.toLowerCase().includes('max') || k.toLowerCase().includes('web'));
-    if (allVars.length > 0) {
-      out.innerHTML += `<div class="box"><strong>Другие похожие переменные:</strong><br>${allVars.join(', ')}</div>`;
+
+    // ✅ Функция приветствия с правильным объектом WebApp
+    function greetUser() {
+      const greetingEl = document.getElementById('greeting');
+      
+      // Проверяем, что WebApp и данные пользователя доступны
+      if (window.WebApp && window.WebApp.initDataUnsafe && window.WebApp.initDataUnsafe.user) {
+        const user = window.WebApp.initDataUnsafe.user;
+        const name = user.first_name || user.username || 'друг';
+        greetingEl.textContent = 'Привет, ' + name + '! 👋';
+      } else {
+        greetingEl.textContent = 'Привет, друг! (тестовый режим)';
+      }
+    }
+
+    // ✅ Запускаем приветствие сразу при загрузке
+    greetUser();
+
+    // Функция для кнопки
+    function sayHello() {
+      document.getElementById('result').textContent = '🎉 Ура! Что-то работает!';
+      
+      // ✅ Вибрация при нажатии (если поддерживается)
+      if (window.WebApp && window.WebApp.HapticFeedback) {
+        window.WebApp.HapticFeedback.impactOccurred('light');
+      }
     }
   </script>
 </body>
