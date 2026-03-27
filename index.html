@@ -198,82 +198,88 @@
     }
     
     async function sendReport() {
-      const objectName = document.getElementById('objectName').value.trim();
-      const date = document.getElementById('reportDate').value;
-      const itr = parseInt(document.getElementById('itrCount').value) || 0;
-      const workers = parseInt(document.getElementById('workersCount').value) || 0;
-      const works = getWorksData();
+  const objectName = document.getElementById('objectName').value.trim();
+  const date = document.getElementById('reportDate').value;
+  const itr = parseInt(document.getElementById('itrCount').value) || 0;
+  const workers = parseInt(document.getElementById('workersCount').value) || 0;
+  const works = getWorksData();
+  
+  if (!objectName) { showStatus('⚠️ Введите объект', 'error'); return; }
+  if (works.length === 0) { showStatus('⚠️ Добавьте работы', 'error'); return; }
+  
+  const saveBtn = document.getElementById('saveBtn');
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Отправка...';
+  
+  const user = window.WebApp?.initDataUnsafe?.user || {};
+  const authorName = user.last_name && user.first_name 
+    ? `${user.last_name} ${user.first_name.charAt(0)}.`
+    : (user.first_name || user.last_name || 'Аноним');
+  
+  // Формируем сообщение
+  let message = `📝 *НОВЫЙ ОТЧЁТ*\n\n`;
+  message += `🏗️ *Объект:* ${objectName}\n`;
+  message += `📅 *Дата:* ${date}\n`;
+  message += `👥 *Люди:* ИТР: ${itr}, Рабочие: ${workers}\n\n`;
+  message += `📋 *Работы:*\n`;
+  works.forEach((w, i) => {
+    message += `${i+1}. ${w.description}${w.percent ? ' - '+w.percent : ''}\n`;
+  });
+  message += `\n━━━━━━━━━━━━━━━━\n👤 *Отчет составил:* ${authorName}`;
+  
+  // Данные для отправки
+  const payload = {
+    type: 'daily_report',
+    message: message,
+    photos: currentPhotosBase64,
+    user: {
+      id: user.id,
+      first_name: user.first_name,
+      last_name: user.last_name
+    }
+  };
+  
+  try {
+    // 🎯 ПРЯМАЯ ОТПРАВКА НА VERCEL
+    const VERCEL_URL = 'https://max-report-bot.vercel.app/api/bot';
+    
+    const response = await fetch(VERCEL_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    
+    const result = await response.json();
+    
+    if (result.ok) {
+      showStatus('✅ Отчёт отправлен! Проверь группу', 'success');
       
-      if (!objectName) { showStatus('⚠️ Введите объект', 'error'); return; }
-      if (works.length === 0) { showStatus('⚠️ Добавьте работы', 'error'); return; }
-      
-      const saveBtn = document.getElementById('saveBtn');
-      saveBtn.disabled = true;
-      saveBtn.textContent = 'Отправка...';
-      
-      const user = window.WebApp?.initDataUnsafe?.user || {};
-      const authorName = user.last_name && user.first_name 
-        ? `${user.last_name} ${user.first_name.charAt(0)}.`
-        : (user.first_name || user.last_name || 'Аноним');
-      
-      // Формируем сообщение
-      let message = `📝 *НОВЫЙ ОТЧЁТ*\n\n`;
-      message += `🏗️ *Объект:* ${objectName}\n`;
-      message += `📅 *Дата:* ${date}\n`;
-      message += `👥 *Люди:* ИТР: ${itr}, Рабочие: ${workers}\n\n`;
-      message += `📋 *Работы:*\n`;
-      works.forEach((w, i) => {
-        message += `${i+1}. ${w.description}${w.percent ? ' - '+w.percent : ''}\n`;
-      });
-      message += `\n━━━━━━━━━━━━━━━━\n👤 *Отчет составил:* ${authorName}`;
-      
-      // Формируем данные для отправки боту
-      const payload = {
-        type: 'daily_report',
-        groupId: GROUP_ID,
-        message: message,
-        photos: currentPhotosBase64,
-        user: {
-          id: user.id,
-          first_name: user.first_name,
-          last_name: user.last_name
-        }
-      };
-      
-      try {
-        // 🎯 ОТПРАВКА ЧЕРЕЗ postEvent (официальный способ MAX)
-        if (window.WebApp && window.WebApp.postEvent) {
-          window.WebApp.postEvent('report_submitted', payload);
-          console.log('✅ postEvent отправлен');
-          
-          showStatus('✅ Отчёт отправлен! Проверь группу', 'success');
-          
-          if (window.WebApp.HapticFeedback) {
-            window.WebApp.HapticFeedback.notificationOccurred('success');
-          }
-          
-          // Очистка формы
-          document.getElementById('objectName').value = '';
-          document.getElementById('itrCount').value = '';
-          document.getElementById('workersCount').value = '';
-          document.getElementById('worksList').innerHTML = '';
-          currentPhotosBase64 = [];
-          updatePhotosPreview();
-          workItemCount = 0;
-          addWorkItem();
-          
-        } else {
-          throw new Error('postEvent не доступен');
-        }
-        
-      } catch(error) {
-        console.error('❌ Ошибка:', error);
-        showStatus('❌ Ошибка: ' + error.message, 'error');
+      if (window.WebApp?.HapticFeedback) {
+        window.WebApp.HapticFeedback.notificationOccurred('success');
       }
       
-      saveBtn.disabled = false;
-      saveBtn.textContent = '📤 Отправить отчёт';
-      setTimeout(() => document.getElementById('status').className = '', 3000);
+      // Очистка формы
+      document.getElementById('objectName').value = '';
+      document.getElementById('itrCount').value = '';
+      document.getElementById('workersCount').value = '';
+      document.getElementById('worksList').innerHTML = '';
+      currentPhotosBase64 = [];
+      updatePhotosPreview();
+      workItemCount = 0;
+      addWorkItem();
+    } else {
+      throw new Error('Сервер вернул ошибку');
+    }
+    
+  } catch(error) {
+    console.error('❌ Ошибка:', error);
+    showStatus('❌ Ошибка: ' + error.message, 'error');
+  }
+  
+  saveBtn.disabled = false;
+  saveBtn.textContent = '📤 Отправить отчёт';
+  setTimeout(() => document.getElementById('status').className = '', 3000);
+}
     }
     
     function showStatus(msg, type) {
