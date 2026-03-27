@@ -2,269 +2,145 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Мой ежедневный отчёт</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Отчёты и Фотографии</title>
   <script src="https://st.max.ru/js/max-web-app.js"></script>
   <style>
-    * { box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: -apple-system, sans-serif;
       padding: 16px;
       background: #f5f5f5;
       margin: 0;
-      font-size: 15px;
     }
     .container {
       background: white;
-      border-radius: 16px;
-      padding: 20px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-      margin-bottom: 16px;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
     }
-    h1 {
-      color: #1a1a1a;
-      font-size: 22px;
-      margin: 0 0 4px 0;
-      font-weight: 600;
+    h1 { margin: 0 0 8px 0; font-size: 20px; }
+    .debug {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+      font-size: 12px;
+      font-family: monospace;
     }
-    #greeting {
-      color: #666;
-      margin: 0 0 20px 0;
+    .form-group { margin-bottom: 12px; }
+    label { display: block; margin-bottom: 4px; font-weight: 500; }
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
       font-size: 14px;
     }
-    
-    /* Форма отчёта */
-    .form-group { margin-bottom: 16px; }
-    label {
-      display: block;
-      font-weight: 500;
-      color: #333;
-      margin-bottom: 6px;
-      font-size: 14px;
-    }
-    #reportDate {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #e0e0e0;
-      border-radius: 10px;
-      font-size: 15px;
-      background: #fafafa;
-      color: #666;
-      cursor: not-allowed;
-    }
-    textarea {
-      width: 100%;
-      min-height: 120px;
-      padding: 12px;
-      border: 1px solid #e0e0e0;
-      border-radius: 10px;
-      font-size: 15px;
-      font-family: inherit;
-      resize: vertical;
-      transition: border-color 0.2s;
-    }
-    textarea:focus {
-      outline: none;
-      border-color: #007AFF;
-    }
-    
-    /* Кнопки */
+    textarea { min-height: 100px; }
     .btn {
       background: #007AFF;
       color: white;
       border: none;
-      padding: 14px 24px;
-      border-radius: 12px;
-      font-size: 16px;
-      font-weight: 500;
-      cursor: pointer;
-      width: 100%;
-      transition: background 0.2s;
-    }
-    .btn:active { background: #0056b3; transform: scale(0.98); }
-    .btn:disabled { background: #ccc; cursor: not-allowed; }
-    
-    .btn-secondary {
-      background: #f0f0f0;
-      color: #333;
-      margin-top: 10px;
-    }
-    .btn-secondary:active { background: #ddd; }
-    
-    /* Статус и сообщения */
-    #status {
-      margin-top: 12px;
-      padding: 10px;
+      padding: 12px;
       border-radius: 8px;
-      font-size: 14px;
+      font-size: 16px;
+      width: 100%;
+      cursor: pointer;
+    }
+    .btn:disabled { background: #ccc; }
+    #status {
+      margin-top: 8px;
+      padding: 8px;
+      border-radius: 6px;
       text-align: center;
       display: none;
     }
-    #status.success { background: #d4edda; color: #155724; display: block; }
-    #status.error { background: #f8d7da; color: #721c24; display: block; }
-    
-    /* Список отчётов */
-    .reports-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-    .reports-header h2 {
-      margin: 0;
-      font-size: 18px;
-      color: #333;
-    }
-    .report-card {
-      background: #fafafa;
-      border-left: 4px solid #007AFF;
-      border-radius: 8px;
-      padding: 12px;
-      margin-bottom: 10px;
-    }
-    .report-card .date {
-      font-size: 12px;
-      color: #888;
-      margin-bottom: 6px;
-    }
-    .report-card .text {
-      font-size: 14px;
-      color: #333;
-      line-height: 1.4;
-      white-space: pre-wrap;
-    }
-    .report-card .delete-btn {
-      background: none;
-      border: none;
-      color: #dc3545;
-      font-size: 12px;
-      padding: 4px 8px;
-      cursor: pointer;
-      margin-top: 8px;
-    }
-    .empty-state {
-      text-align: center;
-      color: #999;
-      padding: 20px;
-      font-size: 14px;
-    }
+    .success { background: #d4edda; color: #155724; display: block !important; }
+    .error { background: #f8d7da; color: #721c24; display: block !important; }
   </style>
 </head>
 <body>
+  <!-- БЛОК ОТЛАДКИ -->
+  <div class="debug" id="debugBox">🔍 Отладка...</div>
+  
   <div class="container">
     <h1>📝 Ежедневный отчёт</h1>
     <p id="greeting">Загрузка...</p>
     
-    <!-- Форма создания отчёта -->
     <div class="form-group">
-      <label for="reportDate">📅 Дата</label>
+      <label>📅 Дата</label>
       <input type="text" id="reportDate" readonly>
     </div>
     
     <div class="form-group">
-      <label for="reportText">✍️ Ваш отчёт</label>
-      <textarea id="reportText" placeholder="Как прошёл ваш день? Что удалось сделать?"></textarea>
+      <label>✍️ Ваш отчёт</label>
+      <textarea id="reportText" placeholder="Как прошёл день?"></textarea>
     </div>
     
     <button class="btn" id="saveBtn" onclick="saveReport()">💾 Сохранить отчёт</button>
     <div id="status"></div>
   </div>
   
-  <!-- Список сохранённых отчётов -->
   <div class="container">
-    <div class="reports-header">
-      <h2>📋 История отчётов</h2>
-      <button class="btn btn-secondary" style="width:auto; padding:8px 16px; font-size:13px;" onclick="loadReports()">🔄 Обновить</button>
-    </div>
+    <h2>📋 История</h2>
     <div id="reportsList"></div>
   </div>
 
   <script>
-    // ===== ИНИЦИАЛИЗАЦИЯ =====
-    if (window.WebApp) {
-      window.WebApp.ready();
-      if (window.WebApp.expand) window.WebApp.expand();
-      // ✅ Делаем цвета под тему мессенджера
-      if (window.WebApp.colorScheme) {
-        document.body.style.background = window.WebApp.colorScheme === 'dark' ? '#1a1a1a' : '#f5f5f5';
-      }
+    // ===== ОТЛАДКА =====
+    const debug = document.getElementById('debugBox');
+    let debugInfo = ['🚀 Запуск приложения...'];
+    
+    function addDebug(msg) {
+      debugInfo.push(msg);
+      debug.innerHTML = debugInfo.join('<br>');
+      console.log(msg);
     }
-
-    // ===== ПРИВЕТСТВИЕ =====
-    function greetUser() {
-      const greetingEl = document.getElementById('greeting');
-      if (window.WebApp?.initDataUnsafe?.user) {
-        const user = window.WebApp.initDataUnsafe.user;
-        const name = user.first_name || user.username || 'друг';
-        greetingEl.textContent = 'Привет, ' + name + '! 👋';
+    
+    try {
+      addDebug('1. Проверяем window.WebApp...');
+      
+      // ===== ИНИЦИАЛИЗАЦИЯ =====
+      if (typeof window.WebApp !== 'undefined') {
+        addDebug('✅ WebApp найден');
+        
+        try {
+          window.WebApp.ready();
+          addDebug('✅ WebApp.ready() вызван');
+        } catch(e) {
+          addDebug('❌ Ошибка ready(): ' + e.message);
+        }
+        
+        // Проверяем данные пользователя
+        if (window.WebApp.initDataUnsafe) {
+          addDebug('✅ initDataUnsafe доступен');
+          
+          if (window.WebApp.initDataUnsafe.user) {
+            const user = window.WebApp.initDataUnsafe.user;
+            addDebug('✅ Пользователь: ' + JSON.stringify(user));
+            
+            const name = user.first_name || user.username || 'друг';
+            document.getElementById('greeting').textContent = 'Привет, ' + name + '! 👋';
+            addDebug('✅ Приветствие установлено');
+          } else {
+            addDebug('⚠️ user не найден в initDataUnsafe');
+            document.getElementById('greeting').textContent = 'Привет! (нет данных)';
+          }
+        } else {
+          addDebug('❌ initDataUnsafe не доступен');
+          document.getElementById('greeting').textContent = 'Привет!';
+        }
+        
       } else {
-        greetingEl.textContent = 'Привет, друг!';
-      }
-    }
-    greetUser();
-
-    // ===== АВТОМАТИЧЕСКАЯ ДАТА =====
-    function setTodayDate() {
-      const today = new Date();
-      const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
-      document.getElementById('reportDate').value = today.toLocaleDateString('ru-RU', options);
-    }
-    setTodayDate();
-
-    // ===== СОХРАНЕНИЕ ОТЧЁТА =====
-    function saveReport() {
-      const text = document.getElementById('reportText').value.trim();
-      const date = document.getElementById('reportDate').value;
-      const statusEl = document.getElementById('status');
-      const saveBtn = document.getElementById('saveBtn');
-      
-      // Валидация
-      if (!text) {
-        showStatus('⚠️ Напишите хотя бы пару слов!', 'error');
-        if (window.WebApp?.HapticFeedback) window.WebApp.HapticFeedback.notificationOccurred('error');
-        return;
+        addDebug('❌ WebApp НЕ найден!');
+        document.getElementById('greeting').textContent = 'Привет! (не MAX)';
       }
       
-      // Блокируем кнопку
-      saveBtn.disabled = true;
-      saveBtn.textContent = 'Сохранение...';
-      
-      // Получаем данные пользователя
-      const userId = window.WebApp?.initDataUnsafe?.user?.id || 'guest';
-      
-      // Создаём объект отчёта
-      const report = {
-        id: Date.now(), // уникальный ID
-        userId: userId,
-        date: date,
-        text: text,
-        createdAt: new Date().toISOString()
-      };
-      
-      // 🗄️ Сохраняем в localStorage
-      const key = `reports_${userId}`;
-      const existing = JSON.parse(localStorage.getItem(key) || '[]');
-      existing.unshift(report); // добавляем в начало
-      localStorage.setItem(key, JSON.stringify(existing));
-      
-      // Успех!
-      showStatus('✅ Отчёт сохранён!', 'success');
-      if (window.WebApp?.HapticFeedback) window.WebApp.HapticFeedback.notificationOccurred('success');
-      
-      // Очищаем форму и обновляем список
-      document.getElementById('reportText').value = '';
-      loadReports();
-      
-      // Разблокируем кнопку
-      setTimeout(() => {
-        saveBtn.disabled = false;
-        saveBtn.textContent = '💾 Сохранить отчёт';
-      }, 1500);
-    }
-
-    // ===== ЗАГРУЗКА СПИСКА ОТЧЁТОВ =====
-    function loadReports() {
-      const userId = window.WebApp?.initDataUnsafe?.user?.id || 'guest';
-      const key = `reports_${userId}`;
-      const reports = JSON.parse(localStorage.getItem(key) || '[]');
-      const container
+      // ===== ДАТА =====
+      addDebug('2. Устанавливаем дату...');
+      try {
+        const today = new Date();
+        const dateStr = today.toLocaleDateString('ru-RU', { 
+          day: 'numeric', 
+          month: 'long
