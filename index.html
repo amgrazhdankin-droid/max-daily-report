@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+    <script src="https://st.max.ru/js/max-web-app.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Мой ежедневный отчёт</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
+      margin: 0;
+    }
+    .container {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      font-size: 20px;
+      margin: 0 0 16px 0;
+    }
+    .btn {
+      background: #007AFF;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      width: 100%;
+    }
+    .btn:active {
+      background: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📝 Ежедневный отчёт</h1>
+    <p id="greeting">Загрузка...</p>
+    <button class="btn" onclick="sayHello()">Нажми меня!</button>
+    <p id="result" style="margin-top: 16px; color: #007AFF; font-weight: 500;"></p>
+  </div>
+
+  <script>
+    // Сообщаем MAX, что приложение готово
+    if (window.MaxWebApp) {
+      window.MaxWebApp.ready();
+    }
+
+    function sayHello() {
+      document.getElementById('result').textContent = '🎉 Ура! Ты написал свой первый код!';
+    }
+      // Функция для приветствия пользователя
+    function greetUser() {
+      if (window.MaxWebApp && window.MaxWebApp.initDataUnsafe) {
+        const user = window.MaxWebApp.initDataUnsafe.user;
+        if (user && user.first_name) {
+          document.getElementById('greeting').textContent = 
+            'Привет, ' + user.first_name + '! 👋';
+          return;
+        }
+      }
+      // Если открыто не в мессенджере
+      document.getElementById('greeting').textContent = 
+        'Привет, друг! Это тестовый режим.';
+    }
+
+    // Запускаем приветствие при загрузке
+    greetUser();
+  </script>
+</body>
+</html>
