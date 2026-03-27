@@ -6,6 +6,7 @@
   <title>Отчёты и Фотографии</title>
   <script src="https://st.max.ru/js/max-web-app.js"></script>
   <style>
+    * { box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       padding: 16px;
@@ -51,7 +52,24 @@
       border-color: #007AFF;
     }
     
-    /* Кнопка загрузки фото */
+    /* Поля количества */
+    .people-row {
+      display: flex;
+      gap: 12px;
+    }
+    .people-field {
+      flex: 1;
+    }
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    
+    /* Загрузка фото */
     .photo-upload {
       border: 2px dashed #ddd;
       border-radius: 8px;
@@ -65,11 +83,6 @@
       border-color: #007AFF;
       background: #f0f7ff;
     }
-    .photo-upload.has-photo {
-      border-style: solid;
-      border-color: #28a745;
-      background: #f0fff4;
-    }
     .photo-upload input[type="file"] {
       display: none;
     }
@@ -82,34 +95,37 @@
       font-size: 14px;
     }
     
-    /* Предпросмотр фото */
-    .photo-preview {
+    /* Превью нескольких фото */
+    .photos-preview {
       margin-top: 12px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 8px;
+    }
+    .photo-preview-item {
+      position: relative;
       border-radius: 8px;
       overflow: hidden;
-      position: relative;
+      aspect-ratio: 1;
     }
-    .photo-preview img {
+    .photo-preview-item img {
       width: 100%;
-      height: auto;
-      display: block;
+      height: 100%;
+      object-fit: cover;
     }
-    .photo-remove {
+    .photo-remove-btn {
       position: absolute;
-      top: 8px;
-      right: 8px;
+      top: 4px;
+      right: 4px;
       background: rgba(220, 53, 69, 0.9);
       color: white;
       border: none;
       border-radius: 50%;
-      width: 32px;
-      height: 32px;
+      width: 24px;
+      height: 24px;
       cursor: pointer;
-      font-size: 18px;
+      font-size: 16px;
       line-height: 1;
-    }
-    .photo-remove:active {
-      background: #c82333;
     }
     
     .btn {
@@ -150,38 +166,86 @@
       display: block !important; 
     }
     
-    /* Карточка отчёта с фото */
-    .report-card {
+    /* История отчётов - компактная */
+    .report-item {
       background: #f8f9fa;
-      border-left: 3px solid #007AFF;
-      padding: 12px;
       border-radius: 8px;
-      margin-bottom: 10px;
-    }
-    .report-date {
-      font-size: 12px;
-      color: #888;
-      margin-bottom: 6px;
-    }
-    .report-text {
-      font-size: 14px;
-      color: #333;
-      line-height: 1.4;
       margin-bottom: 8px;
-    }
-    .report-photo {
-      margin-top: 8px;
-      border-radius: 6px;
       overflow: hidden;
     }
-    .report-photo img {
-      width: 100%;
-      height: auto;
+    .report-header {
+      padding: 12px 16px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.2s;
+    }
+    .report-header:active {
+      background: #e9ecef;
+    }
+    .report-date-only {
+      font-weight: 500;
+      color: #333;
+      font-size: 14px;
+    }
+    .report-expand-icon {
+      color: #999;
+      font-size: 12px;
+      transition: transform 0.3s;
+    }
+    .report-item.expanded .report-expand-icon {
+      transform: rotate(180deg);
+    }
+    .report-item.expanded .report-header {
+      background: #e9ecef;
+    }
+    
+    /* Развёрнутый отчёт */
+    .report-details {
+      display: none;
+      padding: 0 16px 16px 16px;
+      border-top: 1px solid #dee2e6;
+      margin-top: 0;
+    }
+    .report-item.expanded .report-details {
       display: block;
     }
-    .report-has-photo {
-      border-left-color: #28a745;
+    .detail-row {
+      margin-bottom: 10px;
+      font-size: 13px;
     }
+    .detail-label {
+      color: #888;
+      margin-bottom: 4px;
+      font-weight: 500;
+    }
+    .detail-value {
+      color: #333;
+      line-height: 1.4;
+    }
+    .report-photos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .report-photos-grid img {
+      width: 100%;
+      border-radius: 6px;
+      object-fit: cover;
+      aspect-ratio: 1;
+    }
+    .report-badge {
+      display: inline-block;
+      background: #28a745;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      margin-left: 8px;
+    }
+    
     .empty {
       color: #999;
       font-size: 13px;
@@ -192,31 +256,47 @@
 </head>
 <body>
   <div class="container">
-    <h1>📝 Отчёт с фото</h1>
+    <h1>📝 Новый отчёт</h1>
     <p id="greeting" style="color: #666; margin: 0 0 16px 0; font-size: 14px;">Загрузка...</p>
+    
+    <!-- Название объекта -->
+    <div class="form-group">
+      <label for="objectName">🏗️ Название объекта</label>
+      <input type="text" id="objectName" placeholder="Например: ЖК 'Северный', ул. Строителей, 15">
+    </div>
     
     <div class="form-group">
       <label for="reportDate">📅 Дата</label>
       <input type="text" id="reportDate" readonly placeholder="Загрузка...">
     </div>
     
+    <!-- Количество людей -->
     <div class="form-group">
-      <label for="reportText">✍️ Ваш отчёт</label>
-      <textarea id="reportText" placeholder="Как прошёл день? Что сделали?"></textarea>
+      <label>👥 Количество людей на объекте</label>
+      <div class="people-row">
+        <div class="people-field">
+          <input type="number" id="itrCount" placeholder="ИТР" min="0" max="999">
+        </div>
+        <div class="people-field">
+          <input type="number" id="workersCount" placeholder="Рабочие" min="0" max="9999">
+        </div>
+      </div>
     </div>
     
-    <!-- Загрузка фото -->
     <div class="form-group">
-      <label>📷 Фотография</label>
-      <div class="photo-upload" id="photoUpload" onclick="document.getElementById('photoInput').click()">
-        <input type="file" id="photoInput" accept="image/*" onchange="handlePhotoSelect(event)">
+      <label for="reportText">✍️ Описание работ</label>
+      <textarea id="reportText" placeholder="Какие работы выполнялись сегодня?"></textarea>
+    </div>
+    
+    <!-- Загрузка нескольких фото -->
+    <div class="form-group">
+      <label>📷 Фотографии</label>
+      <div class="photo-upload" onclick="document.getElementById('photoInput').click()">
+        <input type="file" id="photoInput" accept="image/*" multiple onchange="handlePhotosSelect(event)">
         <div class="photo-icon">📸</div>
-        <div class="photo-text">Нажмите, чтобы добавить фото</div>
+        <div class="photo-text">Нажмите, чтобы добавить фото (можно несколько)</div>
       </div>
-      <div class="photo-preview" id="photoPreview" style="display: none;">
-        <img id="previewImg" src="" alt="Фото">
-        <button class="photo-remove" onclick="removePhoto()">×</button>
-      </div>
+      <div class="photos-preview" id="photosPreview"></div>
     </div>
     
     <button class="btn" id="saveBtn" onclick="saveReport()">💾 Сохранить отчёт</button>
@@ -231,7 +311,7 @@
   </div>
 
   <script>
-    let currentPhotoBase64 = null;
+    let currentPhotosBase64 = [];
     
     // ===== ИНИЦИАЛИЗАЦИЯ =====
     document.addEventListener('DOMContentLoaded', function() {
@@ -283,38 +363,51 @@
       loadReports();
     }
     
-    // ===== ОБРАБОТКА ФОТО =====
-    function handlePhotoSelect(event) {
-      const file = event.target.files[0];
-      if (!file) return;
+    // ===== ОБРАБОТКА НЕСКОЛЬКИХ ФОТО =====
+    function handlePhotosSelect(event) {
+      const files = Array.from(event.target.files);
+      if (files.length === 0) return;
       
-      console.log('📷 Выбран файл:', file.name);
+      console.log('📷 Выбрано файлов:', files.length);
       
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        currentPhotoBase64 = e.target.result;
-        
-        // Показываем превью
-        const preview = document.getElementById('photoPreview');
-        const previewImg = document.getElementById('previewImg');
-        const uploadBox = document.getElementById('photoUpload');
-        
-        previewImg.src = currentPhotoBase64;
-        preview.style.display = 'block';
-        uploadBox.classList.add('has-photo');
-        
-        if (window.WebApp && window.WebApp.HapticFeedback) {
-          window.WebApp.HapticFeedback.impactOccurred('light');
-        }
-      };
-      reader.readAsDataURL(file);
+      let loadedCount = 0;
+      
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          currentPhotosBase64.push(e.target.result);
+          loadedCount++;
+          
+          if (loadedCount === files.length) {
+            updatePhotosPreview();
+            if (window.WebApp && window.WebApp.HapticFeedback) {
+              window.WebApp.HapticFeedback.impactOccurred('light');
+            }
+          }
+        };
+        reader.readAsDataURL(file);
+      });
     }
     
-    function removePhoto() {
-      currentPhotoBase64 = null;
-      document.getElementById('photoInput').value = '';
-      document.getElementById('photoPreview').style.display = 'none';
-      document.getElementById('photoUpload').classList.remove('has-photo');
+    function updatePhotosPreview() {
+      const container = document.getElementById('photosPreview');
+      
+      if (currentPhotosBase64.length === 0) {
+        container.innerHTML = '';
+        return;
+      }
+      
+      container.innerHTML = currentPhotosBase64.map((photo, index) => `
+        <div class="photo-preview-item">
+          <img src="${photo}" alt="Фото ${index + 1}">
+          <button class="photo-remove-btn" onclick="removePhoto(${index})">×</button>
+        </div>
+      `).join('');
+    }
+    
+    function removePhoto(index) {
+      currentPhotosBase64.splice(index, 1);
+      updatePhotosPreview();
       
       if (window.WebApp && window.WebApp.HapticFeedback) {
         window.WebApp.HapticFeedback.impactOccurred('light');
@@ -325,21 +418,32 @@
     function saveReport() {
       console.log('💾 saveReport() вызван');
       
-      const textEl = document.getElementById('reportText');
+      const objectNameEl = document.getElementById('objectName');
       const dateEl = document.getElementById('reportDate');
+      const itrEl = document.getElementById('itrCount');
+      const workersEl = document.getElementById('workersCount');
+      const textEl = document.getElementById('reportText');
       const statusEl = document.getElementById('status');
       const saveBtn = document.getElementById('saveBtn');
       
-      const text = textEl ? textEl.value.trim() : '';
+      const objectName = objectNameEl ? objectNameEl.value.trim() : '';
       const date = dateEl ? dateEl.value : '';
+      const itr = itrEl ? parseInt(itrEl.value) || 0 : 0;
+      const workers = workersEl ? parseInt(workersEl.value) || 0 : 0;
+      const text = textEl ? textEl.value.trim() : '';
+      
+      if (!objectName) {
+        if (statusEl) {
+          statusEl.textContent = '⚠️ Введите название объекта';
+          statusEl.className = 'error';
+        }
+        return;
+      }
       
       if (!text) {
         if (statusEl) {
-          statusEl.textContent = '⚠️ Введите текст отчёта';
+          statusEl.textContent = '⚠️ Введите описание работ';
           statusEl.className = 'error';
-        }
-        if (window.WebApp && window.WebApp.HapticFeedback) {
-          window.WebApp.HapticFeedback.notificationOccurred('error');
         }
         return;
       }
@@ -354,9 +458,13 @@
       const report = {
         id: Date.now(),
         userId: userId,
+        objectName: objectName,
         date: date,
+        dateRaw: new Date().toISOString(),
+        itr: itr,
+        workers: workers,
         text: text,
-        photo: currentPhotoBase64, // Сохраняем фото в base64
+        photos: [...currentPhotosBase64],
         createdAt: new Date().toISOString()
       };
       
@@ -365,10 +473,11 @@
         const existing = JSON.parse(localStorage.getItem(key) || '[]');
         existing.unshift(report);
         localStorage.setItem(key, JSON.stringify(existing));
-        console.log('✅ Отчёт сохранён с фото:', !!currentPhotoBase64);
+        console.log('✅ Отчёт сохранён. Фото:', currentPhotosBase64.length);
         
         if (statusEl) {
-          statusEl.textContent = '✅ Отчёт сохранён!' + (currentPhotoBase64 ? ' 📷' : '');
+          const photoCount = currentPhotosBase64.length;
+          statusEl.textContent = '✅ Отчёт сохранён!' + (photoCount > 0 ? ` 📷 ${photoCount}` : '');
           statusEl.className = 'success';
         }
         
@@ -376,8 +485,14 @@
           window.WebApp.HapticFeedback.notificationOccurred('success');
         }
         
+        // Очистка формы
+        if (objectNameEl) objectNameEl.value = '';
+        if (itrEl) itrEl.value = '';
+        if (workersEl) workersEl.value = '';
         if (textEl) textEl.value = '';
-        removePhoto();
+        currentPhotosBase64 = [];
+        updatePhotosPreview();
+        
         loadReports();
         
         setTimeout(() => {
@@ -401,7 +516,7 @@
       }
     }
     
-    // ===== ЗАГРУЗКА СПИСКА =====
+    // ===== ЗАГРУЗКА СПИСКА (КОМПАКТНАЯ) =====
     function loadReports() {
       try {
         const userId = window.WebApp?.initDataUnsafe?.user?.id || 'guest';
@@ -419,16 +534,40 @@
         }
         
         container.innerHTML = reports.map(report => {
-          const hasPhoto = report.photo ? 'report-has-photo' : '';
-          const photoHtml = report.photo 
-            ? `<div class="report-photo"><img src="${report.photo}" alt="Фото"></div>`
+          const photoCount = report.photos ? report.photos.length : 0;
+          const photoBadge = photoCount > 0 ? `<span class="report-badge">📷 ${photoCount}</span>` : '';
+          const peopleInfo = (report.itr || report.workers) 
+            ? ` • ИТР: ${report.itr || 0}, Рабочие: ${report.workers || 0}`
             : '';
           
           return `
-            <div class="report-card ${hasPhoto}">
-              <div class="report-date">${report.date}${report.photo ? ' 📷' : ''}</div>
-              <div class="report-text">${escapeHtml(report.text)}</div>
-              ${photoHtml}
+            <div class="report-item" id="report-${report.id}">
+              <div class="report-header" onclick="toggleReport(${report.id})">
+                <span class="report-date-only">${report.date}${photoBadge}</span>
+                <span class="report-expand-icon">▼</span>
+              </div>
+              <div class="report-details">
+                <div class="detail-row">
+                  <div class="detail-label">🏗️ Объект</div>
+                  <div class="detail-value">${escapeHtml(report.objectName)}</div>
+                </div>
+                ${peopleInfo ? `
+                <div class="detail-row">
+                  <div class="detail-label">👥 Люди на объекте</div>
+                  <div class="detail-value">ИТР: ${report.itr || 0}, Рабочие: ${report.workers || 0}</div>
+                </div>` : ''}
+                <div class="detail-row">
+                  <div class="detail-label">✍️ Описание работ</div>
+                  <div class="detail-value">${escapeHtml(report.text)}</div>
+                </div>
+                ${photoCount > 0 ? `
+                <div class="detail-row">
+                  <div class="detail-label">📷 Фотографии</div>
+                  <div class="report-photos-grid">
+                    ${report.photos.map(photo => `<img src="${photo}" alt="Фото">`).join('')}
+                  </div>
+                </div>` : ''}
+              </div>
             </div>
           `;
         }).join('');
@@ -442,7 +581,30 @@
       }
     }
     
+    // ===== РАСКРЫТИЕ/СВЁРТЫВАНИЕ ОТЧЁТА =====
+    function toggleReport(reportId) {
+      const item = document.getElementById(`report-${reportId}`);
+      if (!item) return;
+      
+      const isExpanded = item.classList.contains('expanded');
+      
+      // Сворачиваем все отчёты
+      document.querySelectorAll('.report-item').forEach(el => {
+        el.classList.remove('expanded');
+      });
+      
+      // Если был свёрнут, раскрываем этот
+      if (!isExpanded) {
+        item.classList.add('expanded');
+      }
+      
+      if (window.WebApp && window.WebApp.HapticFeedback) {
+        window.WebApp.HapticFeedback.impactOccurred('light');
+      }
+    }
+    
     function escapeHtml(text) {
+      if (!text) return '';
       const div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
