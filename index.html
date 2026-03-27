@@ -2,131 +2,33 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Отчёты и Фотографии</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Тест отправки данных</title>
   <script src="https://st.max.ru/js/max-web-app.js"></script>
   <style>
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: -apple-system, sans-serif;
       padding: 16px;
       background: #f5f5f5;
       margin: 0;
-      touch-action: manipulation;
     }
     .container {
       background: white;
       border-radius: 12px;
       padding: 16px;
       margin-bottom: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
-    h1 { margin: 0 0 8px 0; font-size: 20px; color: #1a1a1a; }
-    h2 { margin: 0 0 12px 0; font-size: 16px; color: #333; }
-    
-    .form-group { margin-bottom: 12px; }
-    label { 
-      display: block; 
-      margin-bottom: 4px; 
-      font-weight: 500;
-      color: #555;
-      font-size: 14px;
-    }
-    input, textarea {
-      width: 100%;
+    h2 { margin: 0 0 12px 0; font-size: 16px; }
+    .method-item {
       padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      font-size: 14px;
-      font-family: inherit;
+      background: #f8f9fa;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      font-size: 13px;
+      font-family: monospace;
     }
-    input[readonly] {
-      background: #f5f5f5;
-      color: #666;
-    }
-    textarea { 
-      min-height: 100px;
-      resize: vertical;
-    }
-    textarea:focus, input:focus {
-      outline: none;
-      border-color: #007AFF;
-    }
-    
-    .people-row {
-      display: flex;
-      gap: 12px;
-    }
-    .people-field { flex: 1; }
-    input[type="number"] {
-      -moz-appearance: textfield;
-    }
-    input[type="number"]::-webkit-outer-spin-button,
-    input[type="number"]::-webkit-inner-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
-    
-    .photo-upload {
-      border: 2px dashed #ddd;
-      border-radius: 8px;
-      padding: 16px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.2s;
-      background: #fafafa;
-    }
-    .photo-upload:hover {
-      border-color: #007AFF;
-      background: #f0f7ff;
-    }
-    .photo-upload input[type="file"] { display: none; }
-    .photo-icon { font-size: 32px; margin-bottom: 8px; }
-    .photo-text { color: #666; font-size: 14px; }
-    .photo-hint { font-size: 12px; color: #999; margin-top: 4px; }
-    
-    .photos-preview {
-      margin-top: 12px;
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-      gap: 8px;
-    }
-    .photo-preview-item {
-      position: relative;
-      border-radius: 8px;
-      overflow: hidden;
-      aspect-ratio: 1;
-    }
-    .photo-preview-item img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    .photo-remove-btn {
-      position: absolute;
-      top: 4px;
-      right: 4px;
-      background: rgba(220, 53, 69, 0.9);
-      color: white;
-      border: none;
-      border-radius: 50%;
-      width: 24px;
-      height: 24px;
-      cursor: pointer;
-      font-size: 16px;
-      line-height: 1;
-    }
-    .photo-size {
-      position: absolute;
-      bottom: 4px;
-      left: 4px;
-      background: rgba(0,0,0,0.7);
-      color: white;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 10px;
-    }
-    
+    .method-available { background: #d4edda; border-left: 3px solid #28a745; }
+    .method-unavailable { background: #f8d7da; border-left: 3px solid #dc3545; }
     .btn {
       background: #007AFF;
       color: white;
@@ -136,818 +38,181 @@
       font-size: 16px;
       width: 100%;
       cursor: pointer;
-      font-weight: 500;
-    }
-    .btn:active { 
-      background: #0056b3;
-      transform: scale(0.98);
-    }
-    .btn:disabled { 
-      background: #ccc;
-      cursor: not-allowed;
-    }
-    .btn-secondary {
-      background: #6c757d;
       margin-top: 8px;
     }
-    .btn-secondary:active { background: #5a6268; }
-    .btn-danger {
-      background: #dc3545;
-      margin-top: 8px;
-    }
-    .btn-danger:active { background: #c82333; }
-    
-    #status {
-      margin-top: 8px;
-      padding: 8px;
-      border-radius: 6px;
-      text-align: center;
-      display: none;
-      font-size: 14px;
-    }
-    .success { background: #d4edda; color: #155724; display: block !important; }
-    .error { background: #f8d7da; color: #721c24; display: block !important; }
-    .warning { background: #fff3cd; color: #856404; display: block !important; }
-    
-    /* История отчётов */
-    .report-item {
-      background: #f8f9fa;
+    .debug-box {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
       border-radius: 8px;
-      margin-bottom: 8px;
-      overflow: hidden;
-    }
-    .report-header {
-      padding: 12px 16px;
-      cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      transition: background 0.2s;
-    }
-    .report-header:active { background: #e9ecef; }
-    .report-date-only {
-      font-weight: 500;
-      color: #333;
-      font-size: 14px;
-    }
-    .report-expand-icon {
-      color: #999;
+      padding: 12px;
       font-size: 12px;
-      transition: transform 0.3s;
+      font-family: monospace;
+      margin-top: 12px;
+      max-height: 300px;
+      overflow-y: auto;
     }
-    .report-item.expanded .report-expand-icon { transform: rotate(180deg); }
-    .report-item.expanded .report-header { background: #e9ecef; }
-    
-    .report-details {
-      display: none;
-      padding: 0 16px 16px 16px;
-      border-top: 1px solid #dee2e6;
-    }
-    .report-item.expanded .report-details { display: block; }
-    .detail-row { margin-bottom: 10px; font-size: 13px; }
-    .detail-label { color: #888; margin-bottom: 4px; font-weight: 500; }
-    .detail-value { color: #333; line-height: 1.4; }
-    
-    .report-photos-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-      gap: 8px;
-      margin-top: 8px;
-    }
-    .report-photos-grid img {
-      width: 100%;
-      border-radius: 6px;
-      object-fit: cover;
-      aspect-ratio: 1;
-      cursor: pointer;
-    }
-    .report-photos-grid img:active { opacity: 0.8; }
-    
-    .report-badge {
-      display: inline-block;
-      background: #28a745;
-      color: white;
-      padding: 2px 8px;
-      border-radius: 12px;
-      font-size: 11px;
-      margin-left: 8px;
-    }
-    
-    /* МОДАЛЬНОЕ ОКНО ПРОСМОТРА ФОТО */
-    .photo-modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.95);
-      z-index: 1000;
-      touch-action: none;
-    }
-    .photo-modal.active { display: flex; flex-direction: column; }
-    
-    .photo-modal-header {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      padding: 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      z-index: 1001;
-      background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent);
-    }
-    .photo-counter {
-      color: white;
-      font-size: 16px;
-      font-weight: 500;
-    }
-    .photo-close {
-      background: rgba(255,255,255,0.2);
-      border: none;
-      color: white;
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      font-size: 24px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .photo-close:active { background: rgba(255,255,255,0.3); }
-    
-    .photo-modal-content {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      overflow: hidden;
-    }
-    .photo-modal-img {
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-      transition: transform 0.3s;
-    }
-    
-    .photo-nav {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      background: rgba(255,255,255,0.2);
-      border: none;
-      color: white;
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      font-size: 24px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      backdrop-filter: blur(10px);
-    }
-    .photo-nav:active { background: rgba(255,255,255,0.3); }
-    .photo-prev { left: 16px; }
-    .photo-next { right: 16px; }
-    .photo-nav:disabled { opacity: 0.3; cursor: not-allowed; }
-    
-    .empty {
-      color: #999;
-      font-size: 13px;
-      text-align: center;
-      padding: 20px;
-    }
-    
-    .storage-info {
-      font-size: 11px;
-      color: #999;
-      margin-top: 8px;
-      text-align: center;
-    }
+    #testOutput { margin-top: 12px; padding: 12px; background: #e9ecef; border-radius: 8px; font-size: 13px; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>📝 Новый отчёт</h1>
-    <p id="greeting" style="color: #666; margin: 0 0 16px 0; font-size: 14px;">Загрузка...</p>
-    
-    <div class="form-group">
-      <label for="objectName">🏗️ Название объекта</label>
-      <input type="text" id="objectName" placeholder="Например: ЖК 'Северный', ул. Строителей, 15">
-    </div>
-    
-    <div class="form-group">
-      <label for="reportDate">📅 Дата</label>
-      <input type="text" id="reportDate" readonly placeholder="Загрузка...">
-    </div>
-    
-    <div class="form-group">
-      <label>👥 Количество людей на объекте</label>
-      <div class="people-row">
-        <div class="people-field">
-          <input type="number" id="itrCount" placeholder="ИТР" min="0" max="999">
-        </div>
-        <div class="people-field">
-          <input type="number" id="workersCount" placeholder="Рабочие" min="0" max="9999">
-        </div>
-      </div>
-    </div>
-    
-    <div class="form-group">
-      <label for="reportText">✍️ Описание работ</label>
-      <textarea id="reportText" placeholder="Какие работы выполнялись сегодня?"></textarea>
-    </div>
-    
-    <div class="form-group">
-      <label>📷 Фотографии <span style="font-weight:normal;color:#999;font-size:12px">(сжимаются автоматически)</span></label>
-      <div class="photo-upload" onclick="document.getElementById('photoInput').click()">
-        <input type="file" id="photoInput" accept="image/*" multiple onchange="handlePhotosSelect(event)">
-        <div class="photo-icon">📸</div>
-        <div class="photo-text">Нажмите, чтобы добавить фото</div>
-        <div class="photo-hint">Макс. 5 фото, до 500 KB каждое</div>
-      </div>
-      <div class="photos-preview" id="photosPreview"></div>
-    </div>
-    
-    <button class="btn" id="saveBtn" onclick="saveReport()">💾 Сохранить отчёт</button>
-    <div id="status"></div>
+    <h2>🔍 Доступные методы WebApp</h2>
+    <div id="methodsList"></div>
   </div>
   
   <div class="container">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <h2 style="margin:0;">📋 История отчётов</h2>
-      <button onclick="clearAllReports()" style="background:#dc3545;color:white;border:none;padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer;">🗑️ Очистить всё</button>
-    </div>
-    <div id="reportsList">
-      <div class="empty">Загрузка...</div>
-    </div>
-    <div class="storage-info" id="storageInfo"></div>
+    <h2>🧪 Тест отправки данных</h2>
+    <textarea id="testData" placeholder="Введи тестовые данные" style="width:100%;min-height:80px;padding:10px;border:1px solid #ddd;border-radius:8px;">Тест отчёта: Всё хорошо</textarea>
+    <button class="btn" onclick="testSendData()">📤 Отправить данные боту</button>
+    <div id="testOutput"></div>
   </div>
-
-  <!-- МОДАЛЬНОЕ ОКНО ПРОСМОТРА ФОТО -->
-  <div class="photo-modal" id="photoModal">
-    <div class="photo-modal-header">
-      <div class="photo-counter" id="photoCounter">1 / 5</div>
-      <button class="photo-close" onclick="closePhotoModal()">×</button>
-    </div>
-    <div class="photo-modal-content" id="photoModalContent">
-      <img class="photo-modal-img" id="modalImg" src="" alt="Фото">
-      <button class="photo-nav photo-prev" id="btnPrev" onclick="prevPhoto()">‹</button>
-      <button class="photo-nav photo-next" id="btnNext" onclick="nextPhoto()">›</button>
-    </div>
+  
+  <div class="container">
+    <h2>📋 Информация о пользователе</h2>
+    <div class="debug-box" id="userInfo"></div>
   </div>
 
   <script>
-    let currentPhotosBase64 = [];
-    let currentPhotosSizes = [];
-    const MAX_PHOTOS = 5;
-    const MAX_PHOTO_SIZE_KB = 500;
+    const output = document.getElementById('methodsList');
+    const userInfo = document.getElementById('userInfo');
+    const testOutput = document.getElementById('testOutput');
     
-    // Для модального окна
-    let currentModalPhotos = [];
-    let currentModalIndex = 0;
-    let touchStartX = 0;
-    let touchEndX = 0;
-    
-    // ===== ИНИЦИАЛИЗАЦИЯ =====
-    document.addEventListener('DOMContentLoaded', function() {
-      initApp();
-    });
-    
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initApp);
-    } else {
-      initApp();
+    // ===== ПРОВЕРКА МЕТОДОВ =====
+    function checkMethods() {
+      const methods = [
+        'sendData',
+        'send',
+        'postEvent',
+        'sendMessage',
+        'sendToBot',
+        'ready',
+        'expand',
+        'close',
+        'HapticFeedback',
+        'initData',
+        'initDataUnsafe'
+      ];
+      
+      let html = '';
+      methods.forEach(method => {
+        const available = window.WebApp && (window.WebApp[method] !== undefined);
+        const className = available ? 'method-available' : 'method-unavailable';
+        const icon = available ? '✅' : '❌';
+        const type = typeof window.WebApp?.[method];
+        
+        html += `
+          <div class="method-item ${className}">
+            ${icon} <strong>${method}</strong> — ${type}
+            ${available && type === 'function' ? '<br>&nbsp;&nbsp;📝 Можно вызывать' : ''}
+            ${available && type === 'string' ? '<br>&nbsp;&nbsp;📄 Значение: ' + window.WebApp[method].substring(0, 50) + '...' : ''}
+          </div>
+        `;
+      });
+      
+      output.innerHTML = html;
     }
     
-    function initApp() {
-      console.log('🚀 Инициализация приложения');
-      
-      if (typeof window.WebApp !== 'undefined') {
-        console.log('✅ WebApp найден');
-        try {
-          window.WebApp.ready();
-          if (window.WebApp.expand) window.WebApp.expand();
-        } catch(e) {
-          console.log('⚠️ Ошибка ready:', e.message);
-        }
+    // ===== ПОКАЗАТЬ ИНФОРМАЦИЮ О ПОЛЬЗОВАТЕЛЕ =====
+    function showUserInfo() {
+      if (window.WebApp && window.WebApp.initDataUnsafe) {
+        const user = window.WebApp.initDataUnsafe.user;
+        const chat = window.WebApp.initDataUnsafe.chat;
         
-        if (window.WebApp.initDataUnsafe && window.WebApp.initDataUnsafe.user) {
-          const user = window.WebApp.initDataUnsafe.user;
-          const name = user.first_name || user.username || 'друг';
-          const greetingEl = document.getElementById('greeting');
-          if (greetingEl) greetingEl.textContent = 'Привет, ' + name + '! 👋';
+        userInfo.innerHTML = `
+          <div><strong>User ID:</strong> ${user?.id || 'не найдено'}</div>
+          <div><strong>Имя:</strong> ${user?.first_name || 'не найдено'} ${user?.last_name || ''}</div>
+          <div><strong>Username:</strong> ${user?.username || 'не найдено'}</div>
+          <div><strong>Chat ID:</strong> ${chat?.id || 'не найдено'}</div>
+          <div><strong>Chat Type:</strong> ${chat?.type || 'не найдено'}</div>
+          <hr style="border:0;border-top:1px solid #ddd;margin:8px 0;">
+          <div><strong>initData (полный):</strong></div>
+          <div style="word-break:break-all;font-size:11px;">${window.WebApp.initData?.substring(0, 200) || 'не найдено'}...</div>
+        `;
+      } else {
+        userInfo.innerHTML = '<div style="color:red;">⚠️ WebApp или initDataUnsafe не доступен</div>';
+      }
+    }
+    
+    // ===== ТЕСТ ОТПРАВКИ ДАННЫХ =====
+    async function testSendData() {
+      const testData = document.getElementById('testData').value;
+      const result = [];
+      
+      result.push('🚀 Начинаем тест отправки...\n');
+      
+      // Метод 1: sendData (как Telegram)
+      if (window.WebApp && window.WebApp.sendData) {
+        result.push('📤 Метод 1: WebApp.sendData()');
+        try {
+          const payload = JSON.stringify({
+            type: 'test_report',
+            data: testData,
+            timestamp: new Date().toISOString()
+          });
+          window.WebApp.sendData(payload);
+          result.push('✅ sendData() вызван успешно!\n');
+          result.push('📝 Данные отправлены боту. Проверь чат с ботом!\n');
+        } catch(e) {
+          result.push('❌ Ошибка: ' + e.message + '\n');
         }
+      } else {
+        result.push('❌ Метод 1: sendData() не доступен\n');
       }
       
-      const dateEl = document.getElementById('reportDate');
-      if (dateEl) {
-        const today = new Date();
-        const dateStr = today.toLocaleDateString('ru-RU', { 
-          day: 'numeric', 
-          month: 'long', 
-          year: 'numeric',
-          weekday: 'long'
+      // Метод 2: postEvent
+      if (window.WebApp && window.WebApp.postEvent) {
+        result.push('📤 Метод 2: WebApp.postEvent()');
+        try {
+          window.WebApp.postEvent('web_app_data_send', {
+            data: testData,
+            timestamp: Date.now()
+          });
+          result.push('✅ postEvent() вызван успешно!\n');
+        } catch(e) {
+          result.push('❌ Ошибка: ' + e.message + '\n');
+        }
+      } else {
+        result.push('❌ Метод 2: postEvent() не доступен\n');
+      }
+      
+      // Метод 3: close с данными (костыль)
+      result.push('📤 Метод 3: Копирование данных в буфер');
+      try {
+        const payload = JSON.stringify({
+          type: 'report',
+          object: 'Тестовый объект',
+          description: testData,
+          user: window.WebApp?.initDataUnsafe?.user?.first_name || 'Аноним',
+          timestamp: new Date().toLocaleString('ru-RU')
         });
-        dateEl.value = dateStr;
-      }
-      
-      // Проверяем localStorage
-      checkStorage();
-      loadReports();
-      
-      // Свайпы для модального окна
-      setupSwipe();
-    }
-    
-    // ===== ПРОВЕРКА ХРАНИЛИЩА =====
-    function checkStorage() {
-      try {
-        const userId = window.WebApp?.initDataUnsafe?.user?.id || 'guest';
-        const key = 'reports_' + userId;
-        const reports = JSON.parse(localStorage.getItem(key) || '[]');
-        const used = localStorage.length;
-        const total = 1024 * 1024 * 5; // 5MB лимит
         
-        const infoEl = document.getElementById('storageInfo');
-        if (infoEl) {
-          infoEl.textContent = `Отчётов: ${reports.length} | Хранилище: ${used} ключей`;
+        if (navigator.clipboard) {
+          await navigator.clipboard.writeText(payload);
+          result.push('✅ Данные скопированы в буфер обмена!\n');
+          result.push('📋 Вставь их боту вручную для теста\n');
+        } else {
+          result.push('⚠️ Буфер обмена не доступен\n');
         }
-        
-        console.log('💾 Хранилище:', { reports: reports.length, keys: used });
       } catch(e) {
-        console.log('❌ Ошибка проверки хранилища:', e.message);
-      }
-    }
-    
-    // ===== СЖАТИЕ ФОТО =====
-    function compressImage(file, maxWidth = 1024, quality = 0.7) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = (event) => {
-          const img = new Image();
-          img.src = event.target.result;
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            let width = img.width;
-            let height = img.height;
-            
-            if (width > maxWidth) {
-              height = Math.round((height * maxWidth) / width);
-              width = maxWidth;
-            }
-            
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, width, height);
-            
-            const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
-            resolve(compressedDataUrl);
-          };
-          img.onerror = reject;
-        };
-        reader.onerror = reject;
-      });
-    }
-    
-    function getBase64Size(base64String) {
-      const padding = (base64String.match(/=+$/) || [''])[0].length;
-      const bytes = (base64String.length * 0.75) - padding;
-      return Math.round(bytes / 1024);
-    }
-    
-    // ===== ОБРАБОТКА ФОТО =====
-    async function handlePhotosSelect(event) {
-      const files = Array.from(event.target.files);
-      if (files.length === 0) return;
-      
-      const availableSlots = MAX_PHOTOS - currentPhotosBase64.length;
-      if (availableSlots <= 0) {
-        showStatus(`⚠️ Можно добавить максимум ${MAX_PHOTOS} фото`, 'warning');
-        return;
+        result.push('❌ Ошибка: ' + e.message + '\n');
       }
       
-      const filesToAdd = files.slice(0, availableSlots);
-      console.log('📷 Обработка фото:', filesToAdd.length);
-      
-      showStatus('🔄 Сжатие фотографий...', 'warning');
-      
-      let successCount = 0;
-      
-      for (const file of filesToAdd) {
-        try {
-          const compressed = await compressImage(file, 1024, 0.7);
-          const sizeKB = getBase64Size(compressed);
-          
-          if (sizeKB > MAX_PHOTO_SIZE_KB * 1.5) {
-            console.log('⚠️ Фото слишком большое:', sizeKB, 'KB');
-            continue;
-          }
-          
-          currentPhotosBase64.push(compressed);
-          currentPhotosSizes.push(sizeKB);
-          successCount++;
-          
-        } catch(e) {
-          console.log('❌ Ошибка сжатия:', e.message);
-        }
-      }
-      
-      updatePhotosPreview();
-      
-      if (successCount > 0) {
-        showStatus(`✅ Добавлено ${successCount} фото`, 'success');
-        if (window.WebApp && window.WebApp.HapticFeedback) {
-          window.WebApp.HapticFeedback.impactOccurred('light');
-        }
-      }
-      
-      setTimeout(() => {
-        const statusEl = document.getElementById('status');
-        if (statusEl) statusEl.className = '';
-      }, 2000);
-    }
-    
-    function updatePhotosPreview() {
-      const container = document.getElementById('photosPreview');
-      
-      if (currentPhotosBase64.length === 0) {
-        container.innerHTML = '';
-        return;
-      }
-      
-      const totalSizeKB = currentPhotosSizes.reduce((a, b) => a + b, 0);
-      
-      container.innerHTML = currentPhotosBase64.map((photo, index) => `
-        <div class="photo-preview-item">
-          <img src="${photo}" alt="Фото ${index + 1}">
-          <button class="photo-remove-btn" onclick="removePhoto(${index})">×</button>
-          <div class="photo-size">${currentPhotosSizes[index]} KB</div>
-        </div>
-      `).join('') + `
-        <div style="grid-column: 1/-1; text-align: center; font-size: 12px; color: #666; margin-top: 8px;">
-          Всего: ${totalSizeKB} KB (${currentPhotosBase64.length}/${MAX_PHOTOS})
-        </div>
-      `;
-    }
-    
-    function removePhoto(index) {
-      currentPhotosBase64.splice(index, 1);
-      currentPhotosSizes.splice(index, 1);
-      updatePhotosPreview();
+      testOutput.innerHTML = '<pre>' + result.join('') + '</pre>';
       
       if (window.WebApp && window.WebApp.HapticFeedback) {
-        window.WebApp.HapticFeedback.impactOccurred('light');
+        window.WebApp.HapticFeedback.notificationOccurred('success');
       }
     }
     
-    // ===== СОХРАНЕНИЕ ОТЧЁТА =====
-    async function saveReport() {
-      console.log('💾 saveReport() вызван');
-      
-      const objectNameEl = document.getElementById('objectName');
-      const dateEl = document.getElementById('reportDate');
-      const itrEl = document.getElementById('itrCount');
-      const workersEl = document.getElementById('workersCount');
-      const textEl = document.getElementById('reportText');
-      
-      const objectName = objectNameEl ? objectNameEl.value.trim() : '';
-      const date = dateEl ? dateEl.value : '';
-      const itr = itrEl ? parseInt(itrEl.value) || 0 : 0;
-      const workers = workersEl ? parseInt(workersEl.value) || 0 : 0;
-      const text = textEl ? textEl.value.trim() : '';
-      
-      if (!objectName) {
-        showStatus('⚠️ Введите название объекта', 'error');
-        return;
+    // ===== ЗАПУСК ПРИ СТАРТЕ =====
+    window.addEventListener('load', () => {
+      if (window.WebApp) {
+        window.WebApp.ready();
+        if (window.WebApp.expand) window.WebApp.expand();
       }
-      
-      if (!text) {
-        showStatus('⚠️ Введите описание работ', 'error');
-        return;
-      }
-      
-      const saveBtn = document.getElementById('saveBtn');
-      if (saveBtn) {
-        saveBtn.disabled = true;
-        saveBtn.textContent = 'Сохранение...';
-      }
-      
-      const userId = window.WebApp?.initDataUnsafe?.user?.id || 'guest';
-      
-      const report = {
-        id: Date.now(),
-        userId: userId,
-        objectName: objectName,
-        date: date,
-        dateRaw: new Date().toISOString(),
-        itr: itr,
-        workers: workers,
-        text: text,
-        photos: [...currentPhotosBase64],
-        photoSizes: [...currentPhotosSizes],
-        createdAt: new Date().toISOString()
-      };
-      
-      try {
-        const key = 'reports_' + userId;
-        const existing = JSON.parse(localStorage.getItem(key) || '[]');
-        
-        const reportSize = JSON.stringify(report).length;
-        const existingSize = JSON.stringify(existing).length;
-        const newSize = existingSize + reportSize;
-        const maxSize = 5 * 1024 * 1024;
-        
-        if (newSize > maxSize && currentPhotosBase64.length > 0) {
-          showStatus('⚠️ Мало места. Сохраняю без фото...', 'warning');
-          
-          const reportWithoutPhotos = { ...report, photos: [], photoSizes: [] };
-          existing.unshift(reportWithoutPhotos);
-          localStorage.setItem(key, JSON.stringify(existing));
-          
-          showStatus('✅ Отчёт сохранён (без фото)', 'warning');
-          
-        } else {
-          existing.unshift(report);
-          localStorage.setItem(key, JSON.stringify(existing));
-          console.log('✅ Отчёт сохранён. Фото:', currentPhotosBase64.length);
-          
-          const photoCount = currentPhotosBase64.length;
-          showStatus('✅ Отчёт сохранён!' + (photoCount > 0 ? ` 📷 ${photoCount}` : ''), 'success');
-          
-          if (window.WebApp && window.WebApp.HapticFeedback) {
-            window.WebApp.HapticFeedback.notificationOccurred('success');
-          }
-        }
-        
-        if (objectNameEl) objectNameEl.value = '';
-        if (itrEl) itrEl.value = '';
-        if (workersEl) workersEl.value = '';
-        if (textEl) textEl.value = '';
-        currentPhotosBase64 = [];
-        currentPhotosSizes = [];
-        updatePhotosPreview();
-        
-        checkStorage();
-        loadReports();
-        
-        setTimeout(() => {
-          if (saveBtn) {
-            saveBtn.disabled = false;
-            saveBtn.textContent = '💾 Сохранить отчёт';
-          }
-          const statusEl = document.getElementById('status');
-          if (statusEl) statusEl.className = '';
-        }, 2000);
-        
-      } catch(e) {
-        console.log('❌ Ошибка:', e.message);
-        
-        if (e.name === 'QuotaExceededError' || e.message.includes('quota')) {
-          showStatus('⚠️ Память заполнена. Удалите старые отчёты', 'error');
-        } else {
-          showStatus('❌ Ошибка: ' + e.message, 'error');
-        }
-        
-        if (saveBtn) {
-          saveBtn.disabled = false;
-          saveBtn.textContent = '💾 Сохранить отчёт';
-        }
-      }
-    }
-    
-    // ===== ЗАГРУЗКА СПИСКА =====
-    function loadReports() {
-      try {
-        const userId = window.WebApp?.initDataUnsafe?.user?.id || 'guest';
-        const key = 'reports_' + userId;
-        const reports = JSON.parse(localStorage.getItem(key) || '[]');
-        
-        console.log('📋 Отчётов:', reports.length);
-        
-        const container = document.getElementById('reportsList');
-        if (!container) return;
-        
-        if (reports.length === 0) {
-          container.innerHTML = '<div class="empty">Пока нет сохранённых отчётов<br><small>Данные сохраняются автоматически</small></div>';
-          return;
-        }
-        
-        container.innerHTML = reports.map(report => {
-          const photoCount = report.photos ? report.photos.length : 0;
-          const photoBadge = photoCount > 0 ? `<span class="report-badge">📷 ${photoCount}</span>` : '';
-          const peopleInfo = (report.itr || report.workers) 
-            ? ` • ИТР: ${report.itr || 0}, Рабочие: ${report.workers || 0}`
-            : '';
-          
-          const photosHtml = photoCount > 0 ? `
-            <div class="detail-row">
-              <div class="detail-label">📷 Фотографии (нажмите для просмотра)</div>
-              <div class="report-photos-grid">
-                ${report.photos.map((photo, idx) => `
-                  <img src="${photo}" alt="Фото" onclick="openPhotoModal(${report.id}, ${idx})">
-                `).join('')}
-              </div>
-            </div>` : '';
-          
-          return `
-            <div class="report-item" id="report-${report.id}">
-              <div class="report-header" onclick="toggleReport(${report.id})">
-                <span class="report-date-only">${report.date}${photoBadge}</span>
-                <span class="report-expand-icon">▼</span>
-              </div>
-              <div class="report-details">
-                <div class="detail-row">
-                  <div class="detail-label">🏗️ Объект</div>
-                  <div class="detail-value">${escapeHtml(report.objectName)}</div>
-                </div>
-                ${peopleInfo ? `
-                <div class="detail-row">
-                  <div class="detail-label">👥 Люди на объекте</div>
-                  <div class="detail-value">ИТР: ${report.itr || 0}, Рабочие: ${report.workers || 0}</div>
-                </div>` : ''}
-                <div class="detail-row">
-                  <div class="detail-label">✍️ Описание работ</div>
-                  <div class="detail-value">${escapeHtml(report.text)}</div>
-                </div>
-                ${photosHtml}
-              </div>
-            </div>
-          `;
-        }).join('');
-        
-      } catch(e) {
-        console.log('❌ Ошибка загрузки:', e.message);
-        const container = document.getElementById('reportsList');
-        if (container) {
-          container.innerHTML = '<div class="empty" style="color:red">Ошибка: ' + e.message + '</div>';
-        }
-      }
-    }
-    
-    // ===== МОДАЛЬНОЕ ОКНО ФОТО =====
-    function openPhotoModal(reportId, photoIndex) {
-      const userId = window.WebApp?.initDataUnsafe?.user?.id || 'guest';
-      const key = 'reports_' + userId;
-      const reports = JSON.parse(localStorage.getItem(key) || '[]');
-      const report = reports.find(r => r.id === reportId);
-      
-      if (!report || !report.photos || report.photos.length === 0) return;
-      
-      currentModalPhotos = report.photos;
-      currentModalIndex = photoIndex;
-      
-      const modal = document.getElementById('photoModal');
-      const img = document.getElementById('modalImg');
-      const counter = document.getElementById('photoCounter');
-      const btnPrev = document.getElementById('btnPrev');
-      const btnNext = document.getElementById('btnNext');
-      
-      img.src = currentModalPhotos[currentModalIndex];
-      counter.textContent = `${currentModalIndex + 1} / ${currentModalPhotos.length}`;
-      btnPrev.disabled = currentModalIndex === 0;
-      btnNext.disabled = currentModalIndex === currentModalPhotos.length - 1;
-      
-      modal.classList.add('active');
-      
-      if (window.WebApp && window.WebApp.HapticFeedback) {
-        window.WebApp.HapticFeedback.impactOccurred('light');
-      }
-    }
-    
-    function closePhotoModal() {
-      const modal = document.getElementById('photoModal');
-      modal.classList.remove('active');
-      currentModalPhotos = [];
-      currentModalIndex = 0;
-    }
-    
-    function prevPhoto() {
-      if (currentModalIndex > 0) {
-        currentModalIndex--;
-        updateModalPhoto();
-      }
-    }
-    
-    function nextPhoto() {
-      if (currentModalIndex < currentModalPhotos.length - 1) {
-        currentModalIndex++;
-        updateModalPhoto();
-      }
-    }
-    
-    function updateModalPhoto() {
-      const img = document.getElementById('modalImg');
-      const counter = document.getElementById('photoCounter');
-      const btnPrev = document.getElementById('btnPrev');
-      const btnNext = document.getElementById('btnNext');
-      
-      img.src = currentModalPhotos[currentModalIndex];
-      counter.textContent = `${currentModalIndex + 1} / ${currentModalPhotos.length}`;
-      btnPrev.disabled = currentModalIndex === 0;
-      btnNext.disabled = currentModalIndex === currentModalPhotos.length - 1;
-    }
-    
-    // ===== СВАЙПЫ =====
-    function setupSwipe() {
-      const modalContent = document.getElementById('photoModalContent');
-      
-      modalContent.addEventListener('touchstart', (e) => {
-        touchStartX = e.changedTouches[0].screenX;
-      }, {passive: true});
-      
-      modalContent.addEventListener('touchend', (e) => {
-        touchEndX = e.changedTouches[0].screenX;
-        handleSwipe();
-      }, {passive: true});
-      
-      // Клавиши
-      document.addEventListener('keydown', (e) => {
-        if (!document.getElementById('photoModal').classList.contains('active')) return;
-        
-        if (e.key === 'Escape') closePhotoModal();
-        if (e.key === 'ArrowLeft') prevPhoto();
-        if (e.key === 'ArrowRight') nextPhoto();
-      });
-    }
-    
-    function handleSwipe() {
-      const swipeThreshold = 50;
-      const diff = touchStartX - touchEndX;
-      
-      if (Math.abs(diff) > swipeThreshold) {
-        if (diff > 0) {
-          // Свайп влево - следующее фото
-          nextPhoto();
-        } else {
-          // Свайп вправо - предыдущее фото
-          prevPhoto();
-        }
-      }
-    }
-    
-    // ===== УПРАВЛЕНИЕ =====
-    function toggleReport(reportId) {
-      const item = document.getElementById(`report-${reportId}`);
-      if (!item) return;
-      
-      const isExpanded = item.classList.contains('expanded');
-      
-      document.querySelectorAll('.report-item').forEach(el => {
-        el.classList.remove('expanded');
-      });
-      
-      if (!isExpanded) {
-        item.classList.add('expanded');
-      }
-      
-      if (window.WebApp && window.WebApp.HapticFeedback) {
-        window.WebApp.HapticFeedback.impactOccurred('light');
-      }
-    }
-    
-    function clearAllReports() {
-      if (!confirm('⚠️ Удалить ВСЕ отчёты? Это действие нельзя отменить!')) return;
-      
-      try {
-        const userId = window.WebApp?.initDataUnsafe?.user?.id || 'guest';
-        const key = 'reports_' + userId;
-        localStorage.removeItem(key);
-        
-        checkStorage();
-        loadReports();
-        
-        showStatus('✅ Все отчёты удалены', 'success');
-        
-        if (window.WebApp && window.WebApp.HapticFeedback) {
-          window.WebApp.HapticFeedback.notificationOccurred('success');
-        }
-      } catch(e) {
-        showStatus('❌ Ошибка: ' + e.message, 'error');
-      }
-    }
-    
-    function showStatus(message, type) {
-      const statusEl = document.getElementById('status');
-      if (statusEl) {
-        statusEl.textContent = message;
-        statusEl.className = type;
-      }
-    }
-    
-    function escapeHtml(text) {
-      if (!text) return '';
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
+      checkMethods();
+      showUserInfo();
+    });
   </script>
 </body>
 </html>
