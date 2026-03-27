@@ -37,10 +37,7 @@
     textarea { min-height: 100px; resize: vertical; }
     textarea:focus, input:focus { outline: none; border-color: #007AFF; }
     
-    /* Автодополнение */
-    .autocomplete-wrapper {
-      position: relative;
-    }
+    .autocomplete-wrapper { position: relative; }
     .autocomplete-list {
       position: absolute;
       top: 100%;
@@ -61,14 +58,9 @@
       border-bottom: 1px solid #f0f0f0;
       transition: background 0.2s;
     }
-    .autocomplete-item:hover {
-      background: #f0f7ff;
-    }
-    .autocomplete-item:last-child {
-      border-bottom: none;
-    }
+    .autocomplete-item:hover { background: #f0f7ff; }
+    .autocomplete-item:last-child { border-bottom: none; }
     
-    /* Список работ */
     .work-item {
       background: #f8f9fa;
       border-radius: 8px;
@@ -76,17 +68,9 @@
       margin-bottom: 8px;
       border-left: 3px solid #007AFF;
     }
-    .work-row {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 8px;
-    }
-    .work-desc {
-      flex: 1;
-    }
-    .work-percent {
-      width: 80px;
-    }
+    .work-row { display: flex; gap: 8px; margin-bottom: 8px; }
+    .work-desc { flex: 1; }
+    .work-percent { width: 80px; }
     .work-remove {
       background: #dc3545;
       color: white;
@@ -189,8 +173,6 @@
     .success { background: #d4edda; color: #155724; display: block !important; }
     .error { background: #f8d7da; color: #721c24; display: block !important; }
     .warning { background: #fff3cd; color: #856404; display: block !important; }
-    
-    .empty { color: #999; font-size: 13px; text-align: center; padding: 20px; }
   </style>
 </head>
 <body>
@@ -249,7 +231,7 @@
     // ============================================
     // ⚙️ НАСТРОЙКИ
     // ============================================
-    const BOT_TOKEN = 'f9LHodD0cOKRaQFIkbCEJ5fQpwkORYdX-n3WSKpox6DovbL3Ql6ClzpYsiy4ShYPgUKcQnNCme_IYKugWQAh';
+    const BOT_TOKEN = 'f9LHodD0cOIWDIt_A1NylqxiqE0YnFIljnh8KasiFDgPs3Ak-R3taz-G4dTkgzHZFaackJBxlEQOWr__DPFq';
     const GROUP_ID = '-72662613274024';
     // ============================================
     
@@ -257,16 +239,14 @@
     const MAX_PHOTOS = 10;
     let workItemCount = 0;
     
-    // ===== ИНИЦИАЛИЗАЦИЯ =====
     document.addEventListener('DOMContentLoaded', function() {
       initApp();
-      addWorkItem(); // Добавляем первую строку работ
+      addWorkItem();
     });
     
     function initApp() {
       if (window.WebApp) {
         window.WebApp.ready();
-        
         if (window.WebApp.initDataUnsafe && window.WebApp.initDataUnsafe.user) {
           const user = window.WebApp.initDataUnsafe.user;
           const name = user.first_name || user.username || 'друг';
@@ -279,12 +259,9 @@
         day: 'numeric', month: 'long', year: 'numeric', weekday: 'long'
       });
       document.getElementById('reportDate').value = dateStr;
-      
-      // Инициализация автодополнения
       initAutocomplete();
     }
     
-    // ===== АВТОДОПОЛНЕНИЕ ОБЪЕКТОВ =====
     function initAutocomplete() {
       const input = document.getElementById('objectName');
       const list = document.getElementById('autocompleteList');
@@ -315,14 +292,12 @@
         list.style.display = 'block';
       });
       
-      // Закрытие при клике вне
       document.addEventListener('click', function(e) {
         if (!e.target.closest('.autocomplete-wrapper')) {
           list.style.display = 'none';
         }
       });
       
-      // Сохранение при потере фокуса
       input.addEventListener('blur', function() {
         setTimeout(() => {
           const value = this.value.trim();
@@ -342,7 +317,7 @@
       let objects = getStoredObjects();
       if (!objects.includes(name)) {
         objects.unshift(name);
-        objects = objects.slice(0, 50); // Храним последние 50
+        objects = objects.slice(0, 50);
         localStorage.setItem('object_names', JSON.stringify(objects));
       }
     }
@@ -358,7 +333,6 @@
       return text.replace(regex, '<strong>$1</strong>');
     }
     
-    // ===== СПИСОК РАБОТ =====
     function addWorkItem() {
       workItemCount++;
       const container = document.getElementById('worksList');
@@ -379,9 +353,7 @@
     
     function removeWorkItem(id) {
       const item = document.getElementById(`work-${id}`);
-      if (item) {
-        item.remove();
-      }
+      if (item) item.remove();
     }
     
     function getWorksData() {
@@ -400,7 +372,6 @@
       return works;
     }
     
-    // ===== СЖАТИЕ ФОТО =====
     function compressImage(file, maxWidth = 1024, quality = 0.7) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -483,7 +454,6 @@
       updatePhotosPreview();
     }
     
-    // ===== ОТПРАВКА ОТЧЁТА =====
     async function sendReport() {
       const objectName = document.getElementById('objectName').value.trim();
       const date = document.getElementById('reportDate').value;
@@ -506,15 +476,14 @@
       showStatus('📤 Отправка отчёта...', 'warning');
       
       const user = window.WebApp?.initDataUnsafe?.user || {};
-      const userName = user.first_name || user.username || 'Аноним';
+      
       // Формируем имя автора: Фамилия И.
-const authorName = user.last_name && user.first_name 
-  ? `${user.last_name} ${user.first_name.charAt(0)}.`
-  : (user.first_name || user.last_name || 'Аноним');
-
+      const authorName = user.last_name && user.first_name 
+        ? `${user.last_name} ${user.first_name.charAt(0)}.`
+        : (user.first_name || user.last_name || 'Аноним');
+      
       // Формируем сообщение
       let message = `📝 *НОВЫЙ ОТЧЁТ*\n\n`;
-      
       message += `🏗️ *Объект:* ${objectName}\n`;
       message += `📅 *Дата:* ${date}\n`;
       message += `👥 *Люди:* ИТР: ${itr}, Рабочие: ${workers}\n\n`;
@@ -524,9 +493,10 @@ const authorName = user.last_name && user.first_name
         const percentText = work.percent ? ` - ${work.percent}` : '';
         message += `${index + 1}. ${work.description}${percentText}\n`;
       });
+      
       message += `\n━━━━━━━━━━━━━━━━\n👤 *Отчет составил:* ${authorName}`;
+      
       try {
-        // 1. Отправляем текст в группу
         const textResponse = await fetch(`https://platform-api.max.ru/bot/${BOT_TOKEN}/sendMessage`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -543,7 +513,6 @@ const authorName = user.last_name && user.first_name
           throw new Error(textResult.description || 'Ошибка отправки текста');
         }
         
-        // 2. Отправляем фото (если есть)
         if (currentPhotosBase64.length > 0) {
           showStatus('📷 Отправка фото...', 'warning');
           
@@ -562,7 +531,6 @@ const authorName = user.last_name && user.first_name
           window.WebApp.HapticFeedback.notificationOccurred('success');
         }
         
-        // Очистка формы
         document.getElementById('objectName').value = '';
         document.getElementById('itrCount').value = '';
         document.getElementById('workersCount').value = '';
@@ -570,7 +538,7 @@ const authorName = user.last_name && user.first_name
         currentPhotosBase64 = [];
         updatePhotosPreview();
         workItemCount = 0;
-        addWorkItem(); // Добавляем пустую строку для следующего отчёта
+        addWorkItem();
         
       } catch(error) {
         console.error('❌ Ошибка:', error);
@@ -586,7 +554,6 @@ const authorName = user.last_name && user.first_name
       setTimeout(() => document.getElementById('status').className = '', 3000);
     }
     
-    // ===== ОТПРАВКА ФОТО =====
     async function sendPhoto(base64Data) {
       const base64Image = base64Data.replace(/^image\/\w+;base64,/, '');
       const blob = await fetch('image/jpeg;base64,' + base64Image).then(r => r.blob());
