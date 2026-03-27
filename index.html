@@ -50,6 +50,68 @@
       outline: none;
       border-color: #007AFF;
     }
+    
+    /* Кнопка загрузки фото */
+    .photo-upload {
+      border: 2px dashed #ddd;
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: #fafafa;
+    }
+    .photo-upload:hover {
+      border-color: #007AFF;
+      background: #f0f7ff;
+    }
+    .photo-upload.has-photo {
+      border-style: solid;
+      border-color: #28a745;
+      background: #f0fff4;
+    }
+    .photo-upload input[type="file"] {
+      display: none;
+    }
+    .photo-icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+    .photo-text {
+      color: #666;
+      font-size: 14px;
+    }
+    
+    /* Предпросмотр фото */
+    .photo-preview {
+      margin-top: 12px;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+    }
+    .photo-preview img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .photo-remove {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(220, 53, 69, 0.9);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+    }
+    .photo-remove:active {
+      background: #c82333;
+    }
+    
     .btn {
       background: #007AFF;
       color: white;
@@ -87,22 +149,38 @@
       color: #721c24; 
       display: block !important; 
     }
+    
+    /* Карточка отчёта с фото */
     .report-card {
       background: #f8f9fa;
       border-left: 3px solid #007AFF;
-      padding: 10px;
-      border-radius: 6px;
-      margin-bottom: 8px;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 10px;
     }
     .report-date {
       font-size: 12px;
       color: #888;
-      margin-bottom: 4px;
+      margin-bottom: 6px;
     }
     .report-text {
       font-size: 14px;
       color: #333;
       line-height: 1.4;
+      margin-bottom: 8px;
+    }
+    .report-photo {
+      margin-top: 8px;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .report-photo img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .report-has-photo {
+      border-left-color: #28a745;
     }
     .empty {
       color: #999;
@@ -114,7 +192,7 @@
 </head>
 <body>
   <div class="container">
-    <h1>📝 Ежедневный отчёт</h1>
+    <h1>📝 Отчёт с фото</h1>
     <p id="greeting" style="color: #666; margin: 0 0 16px 0; font-size: 14px;">Загрузка...</p>
     
     <div class="form-group">
@@ -125,6 +203,20 @@
     <div class="form-group">
       <label for="reportText">✍️ Ваш отчёт</label>
       <textarea id="reportText" placeholder="Как прошёл день? Что сделали?"></textarea>
+    </div>
+    
+    <!-- Загрузка фото -->
+    <div class="form-group">
+      <label>📷 Фотография</label>
+      <div class="photo-upload" id="photoUpload" onclick="document.getElementById('photoInput').click()">
+        <input type="file" id="photoInput" accept="image/*" onchange="handlePhotoSelect(event)">
+        <div class="photo-icon">📸</div>
+        <div class="photo-text">Нажмите, чтобы добавить фото</div>
+      </div>
+      <div class="photo-preview" id="photoPreview" style="display: none;">
+        <img id="previewImg" src="" alt="Фото">
+        <button class="photo-remove" onclick="removePhoto()">×</button>
+      </div>
     </div>
     
     <button class="btn" id="saveBtn" onclick="saveReport()">💾 Сохранить отчёт</button>
@@ -139,13 +231,13 @@
   </div>
 
   <script>
-    // ===== ЖДЁМ ПОЛНОЙ ЗАГРУЗКИ СТРАНИЦЫ =====
+    let currentPhotoBase64 = null;
+    
+    // ===== ИНИЦИАЛИЗАЦИЯ =====
     document.addEventListener('DOMContentLoaded', function() {
-      addDebug('📄 DOM загружен, инициализация...');
       initApp();
     });
     
-    // Если DOM уже загружен (на всякий случай)
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', initApp);
     } else {
@@ -153,48 +245,28 @@
     }
     
     function initApp() {
-      addDebug('🚀 Инициализация приложения');
+      console.log('🚀 Инициализация приложения');
       
-      // ===== ИНИЦИАЛИЗАЦИЯ WEBAPP =====
+      // WebApp
       if (typeof window.WebApp !== 'undefined') {
-        addDebug('✅ WebApp найден');
-        
+        console.log('✅ WebApp найден');
         try {
           window.WebApp.ready();
-          addDebug('✅ WebApp.ready() вызван');
-          
-          // Пробуем развернуть на весь экран
-          if (window.WebApp.expand) {
-            window.WebApp.expand();
-          }
+          if (window.WebApp.expand) window.WebApp.expand();
         } catch(e) {
-          addDebug('⚠️ Ошибка ready: ' + e.message);
+          console.log('⚠️ Ошибка ready:', e.message);
         }
         
-        // ===== ПРИВЕТСТВИЕ =====
+        // Приветствие
         if (window.WebApp.initDataUnsafe && window.WebApp.initDataUnsafe.user) {
           const user = window.WebApp.initDataUnsafe.user;
-          addDebug('👤 Пользователь: ' + user.first_name + ' ' + user.last_name);
-          
           const name = user.first_name || user.username || 'друг';
           const greetingEl = document.getElementById('greeting');
-          if (greetingEl) {
-            greetingEl.textContent = 'Привет, ' + name + '! 👋';
-            addDebug('✅ Приветствие установлено');
-          }
-        } else {
-          addDebug('⚠️ Данные пользователя не найдены');
-          const greetingEl = document.getElementById('greeting');
-          if (greetingEl) greetingEl.textContent = 'Привет!';
+          if (greetingEl) greetingEl.textContent = 'Привет, ' + name + '! 👋';
         }
-        
-      } else {
-        addDebug('❌ WebApp не найден');
-        const greetingEl = document.getElementById('greeting');
-        if (greetingEl) greetingEl.textContent = 'Привет! (тестовый режим)';
       }
       
-      // ===== УСТАНОВКА ДАТЫ =====
+      // Дата
       const dateEl = document.getElementById('reportDate');
       if (dateEl) {
         const today = new Date();
@@ -205,18 +277,53 @@
           weekday: 'long'
         });
         dateEl.value = dateStr;
-        addDebug('📅 Дата установлена: ' + dateStr);
       }
       
-      // ===== ЗАГРУЗКА СПИСКА ОТЧЁТОВ =====
+      // Загрузка списка
       loadReports();
+    }
+    
+    // ===== ОБРАБОТКА ФОТО =====
+    function handlePhotoSelect(event) {
+      const file = event.target.files[0];
+      if (!file) return;
       
-      addDebug('✅ Инициализация завершена');
+      console.log('📷 Выбран файл:', file.name);
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        currentPhotoBase64 = e.target.result;
+        
+        // Показываем превью
+        const preview = document.getElementById('photoPreview');
+        const previewImg = document.getElementById('previewImg');
+        const uploadBox = document.getElementById('photoUpload');
+        
+        previewImg.src = currentPhotoBase64;
+        preview.style.display = 'block';
+        uploadBox.classList.add('has-photo');
+        
+        if (window.WebApp && window.WebApp.HapticFeedback) {
+          window.WebApp.HapticFeedback.impactOccurred('light');
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+    
+    function removePhoto() {
+      currentPhotoBase64 = null;
+      document.getElementById('photoInput').value = '';
+      document.getElementById('photoPreview').style.display = 'none';
+      document.getElementById('photoUpload').classList.remove('has-photo');
+      
+      if (window.WebApp && window.WebApp.HapticFeedback) {
+        window.WebApp.HapticFeedback.impactOccurred('light');
+      }
     }
     
     // ===== СОХРАНЕНИЕ ОТЧЁТА =====
     function saveReport() {
-      addDebug('💾 saveReport() вызван');
+      console.log('💾 saveReport() вызван');
       
       const textEl = document.getElementById('reportText');
       const dateEl = document.getElementById('reportDate');
@@ -234,24 +341,22 @@
         if (window.WebApp && window.WebApp.HapticFeedback) {
           window.WebApp.HapticFeedback.notificationOccurred('error');
         }
-        addDebug('⚠️ Пустой текст');
         return;
       }
       
-      // Блокируем кнопку
       if (saveBtn) {
         saveBtn.disabled = true;
         saveBtn.textContent = 'Сохранение...';
       }
       
       const userId = window.WebApp?.initDataUnsafe?.user?.id || 'guest';
-      addDebug('👤 User ID: ' + userId);
       
       const report = {
         id: Date.now(),
         userId: userId,
         date: date,
         text: text,
+        photo: currentPhotoBase64, // Сохраняем фото в base64
         createdAt: new Date().toISOString()
       };
       
@@ -260,10 +365,10 @@
         const existing = JSON.parse(localStorage.getItem(key) || '[]');
         existing.unshift(report);
         localStorage.setItem(key, JSON.stringify(existing));
-        addDebug('✅ Отчёт сохранён (всего: ' + existing.length + ')');
+        console.log('✅ Отчёт сохранён с фото:', !!currentPhotoBase64);
         
         if (statusEl) {
-          statusEl.textContent = '✅ Отчёт сохранён!';
+          statusEl.textContent = '✅ Отчёт сохранён!' + (currentPhotoBase64 ? ' 📷' : '');
           statusEl.className = 'success';
         }
         
@@ -271,25 +376,20 @@
           window.WebApp.HapticFeedback.notificationOccurred('success');
         }
         
-        // Очищаем поле
         if (textEl) textEl.value = '';
-        
-        // Обновляем список
+        removePhoto();
         loadReports();
         
-        // Разблокируем кнопку
         setTimeout(() => {
           if (saveBtn) {
             saveBtn.disabled = false;
             saveBtn.textContent = '💾 Сохранить отчёт';
           }
-          if (statusEl) {
-            statusEl.className = '';
-          }
+          if (statusEl) statusEl.className = '';
         }, 2000);
         
       } catch(e) {
-        addDebug('❌ Ошибка сохранения: ' + e.message);
+        console.log('❌ Ошибка:', e.message);
         if (statusEl) {
           statusEl.textContent = '❌ Ошибка: ' + e.message;
           statusEl.className = 'error';
@@ -301,54 +401,51 @@
       }
     }
     
-    // ===== ЗАГРУЗКА СПИСКА ОТЧЁТОВ =====
+    // ===== ЗАГРУЗКА СПИСКА =====
     function loadReports() {
       try {
         const userId = window.WebApp?.initDataUnsafe?.user?.id || 'guest';
         const key = 'reports_' + userId;
         const reports = JSON.parse(localStorage.getItem(key) || '[]');
         
-        addDebug('📋 Загрузка отчётов: ' + reports.length);
+        console.log('📋 Отчётов:', reports.length);
         
         const container = document.getElementById('reportsList');
-        if (!container) {
-          addDebug('❌ Контейнер reportsList не найден');
-          return;
-        }
+        if (!container) return;
         
         if (reports.length === 0) {
           container.innerHTML = '<div class="empty">Пока нет сохранённых отчётов</div>';
           return;
         }
         
-        container.innerHTML = reports.map(report => `
-          <div class="report-card">
-            <div class="report-date">${report.date}</div>
-            <div class="report-text">${escapeHtml(report.text)}</div>
-          </div>
-        `).join('');
-        
-        addDebug('✅ Список отчётов отображён');
+        container.innerHTML = reports.map(report => {
+          const hasPhoto = report.photo ? 'report-has-photo' : '';
+          const photoHtml = report.photo 
+            ? `<div class="report-photo"><img src="${report.photo}" alt="Фото"></div>`
+            : '';
+          
+          return `
+            <div class="report-card ${hasPhoto}">
+              <div class="report-date">${report.date}${report.photo ? ' 📷' : ''}</div>
+              <div class="report-text">${escapeHtml(report.text)}</div>
+              ${photoHtml}
+            </div>
+          `;
+        }).join('');
         
       } catch(e) {
-        addDebug('❌ Ошибка загрузки списка: ' + e.message);
+        console.log('❌ Ошибка загрузки:', e.message);
         const container = document.getElementById('reportsList');
         if (container) {
-          container.innerHTML = '<div class="empty" style="color:red">Ошибка загрузки</div>';
+          container.innerHTML = '<div class="empty" style="color:red">Ошибка</div>';
         }
       }
     }
     
-    // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
     function escapeHtml(text) {
       const div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
-    }
-    
-    function addDebug(msg) {
-      console.log('[APP]', msg);
-      // Можно добавить отображение отладки на экране, если нужно
     }
   </script>
 </body>
