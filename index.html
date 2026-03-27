@@ -36,8 +36,6 @@
     #status { margin-top: 8px; padding: 8px; border-radius: 6px; text-align: center; display: none; font-size: 14px; }
     .success { background: #d4edda; color: #155724; display: block !important; }
     .error { background: #f8d7da; color: #721c24; display: block !important; }
-    .warning { background: #fff3cd; color: #856404; display: block !important; }
-    .debug-box { background: #f8f9fa; border: 1px solid #ddd; border-radius: 8px; padding: 12px; font-size: 12px; font-family: monospace; margin-top: 12px; max-height: 200px; overflow-y: auto; }
   </style>
 </head>
 <body>
@@ -49,12 +47,10 @@
       <label>🏗️ Название объекта</label>
       <input type="text" id="objectName" placeholder="Например: Новая Волна">
     </div>
-    
     <div class="form-group">
       <label>📅 Дата</label>
       <input type="text" id="reportDate" readonly>
     </div>
-    
     <div class="form-group">
       <label>👥 Люди на объекте</label>
       <div class="people-row">
@@ -62,13 +58,11 @@
         <div class="people-field"><input type="number" id="workersCount" placeholder="Рабочие"></div>
       </div>
     </div>
-    
     <div class="form-group">
       <label>📋 Работы</label>
       <div id="worksList"></div>
       <button type="button" class="add-work-btn" onclick="addWorkItem()">➕ Добавить работу</button>
     </div>
-    
     <div class="form-group">
       <label>📷 Фото</label>
       <div class="photo-upload" onclick="document.getElementById('photoInput').click()">
@@ -81,35 +75,15 @@
     
     <button class="btn" id="saveBtn" onclick="sendReport()">📤 Отправить отчёт</button>
     <div id="status"></div>
-    
-    <!-- БЛОК ДИАГНОСТИКИ -->
-    <div class="debug-box" id="debugLog">
-      <strong>🔍 Лог диагностики:</strong><br>
-      Ожидание отправки...
-    </div>
   </div>
 
   <script>
-    const BOT_TOKEN = 'f9LHodD0cOIWDIt_A1NylqxiqE0YnFIljnh8KasiFDgPs3Ak-R3taz-G4dTkgzHZFaackJBxlEQOWr__DPFq';
     const GROUP_ID = '-72662613274024';
-    
     let currentPhotosBase64 = [];
     const MAX_PHOTOS = 10;
     let workItemCount = 0;
     
-    function log(msg) {
-      const debug = document.getElementById('debugLog');
-      const time = new Date().toLocaleTimeString();
-      debug.innerHTML += `<div>[${time}] ${msg}</div>`;
-      debug.scrollTop = debug.scrollHeight;
-      console.log('[DEBUG]', msg);
-    }
-    
     document.addEventListener('DOMContentLoaded', function() {
-      log('🚀 Приложение загружено');
-      log('🔑 Токен: ' + BOT_TOKEN.substring(0, 20) + '...');
-      log('📬 Группа: ' + GROUP_ID);
-      
       initApp();
       addWorkItem();
     });
@@ -117,21 +91,13 @@
     function initApp() {
       if (window.WebApp) {
         window.WebApp.ready();
-        log('✅ WebApp.ready() вызван');
-        
-        if (window.WebApp.initDataUnsafe && window.WebApp.initDataUnsafe.user) {
-          const user = window.WebApp.initDataUnsafe.user;
-          const name = user.first_name || user.username || 'друг';
+        if (window.WebApp.initDataUnsafe?.user) {
+          const name = window.WebApp.initDataUnsafe.user.first_name || 'друг';
           document.getElementById('greeting').textContent = 'Привет, ' + name + '! 👋';
-          log('👤 Пользователь: ' + name);
         }
-      } else {
-        log('⚠️ WebApp не найден');
       }
-      
-      const today = new Date();
-      document.getElementById('reportDate').value = today.toLocaleDateString('ru-RU', { 
-        day: 'numeric', month: 'long', year: 'numeric'
+      document.getElementById('reportDate').value = new Date().toLocaleDateString('ru-RU', { 
+        day: 'numeric', month: 'long', year: 'numeric' 
       });
     }
     
@@ -146,7 +112,7 @@
           <input type="text" class="work-desc" placeholder="Описание работы">
           <input type="number" class="work-percent" placeholder="%" min="0" max="100">
         </div>
-        ${workItemCount > 1 ? `<button type="button" class="work-remove" onclick="removeWorkItem(${workItemCount})">🗑️</button>` : ''}
+        ${workItemCount > 1 ? `<button class="work-remove" onclick="removeWorkItem(${workItemCount})">🗑️</button>` : ''}
       `;
       container.appendChild(workDiv);
     }
@@ -194,29 +160,22 @@
     async function handlePhotosSelect(event) {
       const files = Array.from(event.target.files);
       if (files.length === 0) return;
-      
-      const availableSlots = MAX_PHOTOS - currentPhotosBase64.length;
-      if (availableSlots <= 0) {
+      const available = MAX_PHOTOS - currentPhotosBase64.length;
+      if (available <= 0) {
         showStatus(`⚠️ Максимум ${MAX_PHOTOS} фото`, 'warning');
         return;
       }
-      
-      const filesToAdd = files.slice(0, availableSlots);
-      log(`📷 Обработка ${filesToAdd.length} фото...`);
-      
-      let successCount = 0;
-      for (const file of filesToAdd) {
+      const toAdd = files.slice(0, available);
+      let count = 0;
+      for (const file of toAdd) {
         try {
-          const compressed = await compressImage(file, 1024, 0.7);
-          currentPhotosBase64.push(compressed);
-          successCount++;
-        } catch(e) {
-          log('❌ Ошибка сжатия: ' + e.message);
-        }
+          currentPhotosBase64.push(await compressImage(file));
+          count++;
+        } catch(e) { console.log('❌', e.message); }
       }
-      
       updatePhotosPreview();
-      log(`✅ Добавлено ${successCount} фото`);
+      showStatus(`✅ Добавлено ${count} фото`, 'success');
+      setTimeout(() => document.getElementById('status').className = '', 2000);
     }
     
     function updatePhotosPreview() {
@@ -225,16 +184,16 @@
         container.innerHTML = '';
         return;
       }
-      container.innerHTML = currentPhotosBase64.map((photo, index) => `
+      container.innerHTML = currentPhotosBase64.map((photo, i) => `
         <div class="photo-preview-item">
           <img src="${photo}">
-          <button class="photo-remove-btn" onclick="removePhoto(${index})">×</button>
+          <button class="photo-remove-btn" onclick="removePhoto(${i})">×</button>
         </div>
       `).join('');
     }
     
-    function removePhoto(index) {
-      currentPhotosBase64.splice(index, 1);
+    function removePhoto(i) {
+      currentPhotosBase64.splice(i, 1);
       updatePhotosPreview();
     }
     
@@ -245,18 +204,8 @@
       const workers = parseInt(document.getElementById('workersCount').value) || 0;
       const works = getWorksData();
       
-      log('🚀 Начинаю отправку отчёта...');
-      
-      if (!objectName) {
-        showStatus('⚠️ Введите объект', 'error');
-        log('❌ Ошибка: нет объекта');
-        return;
-      }
-      if (works.length === 0) {
-        showStatus('⚠️ Добавьте работы', 'error');
-        log('❌ Ошибка: нет работ');
-        return;
-      }
+      if (!objectName) { showStatus('⚠️ Введите объект', 'error'); return; }
+      if (works.length === 0) { showStatus('⚠️ Добавьте работы', 'error'); return; }
       
       const saveBtn = document.getElementById('saveBtn');
       saveBtn.disabled = true;
@@ -267,92 +216,69 @@
         ? `${user.last_name} ${user.first_name.charAt(0)}.`
         : (user.first_name || user.last_name || 'Аноним');
       
+      // Формируем сообщение
       let message = `📝 *НОВЫЙ ОТЧЁТ*\n\n`;
       message += `🏗️ *Объект:* ${objectName}\n`;
       message += `📅 *Дата:* ${date}\n`;
       message += `👥 *Люди:* ИТР: ${itr}, Рабочие: ${workers}\n\n`;
       message += `📋 *Работы:*\n`;
-      
-      works.forEach((work, index) => {
-        const percentText = work.percent ? ` - ${work.percent}` : '';
-        message += `${index + 1}. ${work.description}${percentText}\n`;
+      works.forEach((w, i) => {
+        message += `${i+1}. ${w.description}${w.percent ? ' - '+w.percent : ''}\n`;
       });
-      
       message += `\n━━━━━━━━━━━━━━━━\n👤 *Отчет составил:* ${authorName}`;
       
-      log('📝 Формируем сообщение...');
-      log('📊 Размер сообщения: ' + message.length + ' символов');
+      // Формируем данные для отправки боту
+      const payload = {
+        type: 'daily_report',
+        groupId: GROUP_ID,
+        message: message,
+        photos: currentPhotosBase64,
+        user: {
+          id: user.id,
+          first_name: user.first_name,
+          last_name: user.last_name
+        }
+      };
       
-      // === ТЕСТИРУЕМ РАЗНЫЕ URL ===
-      const possibleUrls = [
-        `https://platform-api.max.ru/bot/${BOT_TOKEN}/sendMessage`,
-        `https://api.max.ru/bot/${BOT_TOKEN}/sendMessage`,
-        `https://tgb-api.max.ru/bot/${BOT_TOKEN}/sendMessage`
-      ];
-      
-      let success = false;
-      
-      for (const url of possibleUrls) {
-        log('🌐 Пробуем URL: ' + url);
-        
-        try {
-          const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              chat_id: GROUP_ID,
-              text: message,
-              parse_mode: 'Markdown'
-            })
-          });
+      try {
+        // 🎯 ОТПРАВКА ЧЕРЕЗ postEvent (официальный способ MAX)
+        if (window.WebApp && window.WebApp.postEvent) {
+          window.WebApp.postEvent('report_submitted', payload);
+          console.log('✅ postEvent отправлен');
           
-          log('📊 Статус: ' + response.status + ' ' + response.statusText);
+          showStatus('✅ Отчёт отправлен! Проверь группу', 'success');
           
-          const text = await response.text();
-          log('📄 Ответ: ' + text.substring(0, 200));
-          
-          if (response.ok) {
-            const result = JSON.parse(text);
-            if (result.ok) {
-              log('✅ УСПЕХ! Отчёт отправлен!');
-              success = true;
-              break;
-            } else {
-              log('❌ API вернул ошибку: ' + (result.description || 'unknown'));
-            }
-          } else {
-            log('❌ HTTP ошибка: ' + response.status);
+          if (window.WebApp.HapticFeedback) {
+            window.WebApp.HapticFeedback.notificationOccurred('success');
           }
           
-        } catch(e) {
-          log('❌ Ошибка fetch: ' + e.message);
-          log('💡 Возможно CORS или неверный URL');
+          // Очистка формы
+          document.getElementById('objectName').value = '';
+          document.getElementById('itrCount').value = '';
+          document.getElementById('workersCount').value = '';
+          document.getElementById('worksList').innerHTML = '';
+          currentPhotosBase64 = [];
+          updatePhotosPreview();
+          workItemCount = 0;
+          addWorkItem();
+          
+        } else {
+          throw new Error('postEvent не доступен');
         }
-      }
-      
-      if (success) {
-        showStatus('✅ Отчёт отправлен!', 'success');
         
-        document.getElementById('objectName').value = '';
-        document.getElementById('itrCount').value = '';
-        document.getElementById('workersCount').value = '';
-        document.getElementById('worksList').innerHTML = '';
-        currentPhotosBase64 = [];
-        updatePhotosPreview();
-        workItemCount = 0;
-        addWorkItem();
-      } else {
-        showStatus('❌ Не удалось отправить. Смотри лог ниже.', 'error');
-        log('❌ Все варианты URL не сработали');
+      } catch(error) {
+        console.error('❌ Ошибка:', error);
+        showStatus('❌ Ошибка: ' + error.message, 'error');
       }
       
       saveBtn.disabled = false;
       saveBtn.textContent = '📤 Отправить отчёт';
+      setTimeout(() => document.getElementById('status').className = '', 3000);
     }
     
-    function showStatus(message, type) {
+    function showStatus(msg, type) {
       const el = document.getElementById('status');
-      el.textContent = message;
+      el.textContent = msg;
       el.className = type;
     }
   </script>
