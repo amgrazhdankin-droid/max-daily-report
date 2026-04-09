@@ -23,17 +23,36 @@
     h1 { margin: 0 0 16px 0; font-size: 20px; color: #1a1a1a; }
     .form-group { margin-bottom: 12px; }
     label { display: block; margin-bottom: 6px; font-weight: 500; color: #555; font-size: 14px; }
-    input, textarea {
+    input, textarea, select {
       width: 100%;
       padding: 10px;
       border: 1px solid #ddd;
       border-radius: 8px;
       font-size: 14px;
       font-family: inherit;
+      background: white;
+      color: #333;
     }
     input[readonly] { background: #f5f5f5; color: #666; }
     textarea { min-height: 100px; resize: vertical; }
-    textarea:focus, input:focus { outline: none; border-color: #007AFF; }
+    textarea:focus, input:focus, select:focus { 
+      outline: none; 
+      border-color: #007AFF;
+      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+    }
+    
+    /* Стилизация select с кастомной стрелкой */
+    select {
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 12px;
+      cursor: pointer;
+      padding-right: 32px;
+    }
     
     .people-row { display: flex; gap: 12px; }
     .people-field { flex: 1; }
@@ -141,6 +160,17 @@
     .success { background: #d4edda; color: #155724; display: block !important; }
     .error { background: #f8d7da; color: #721c24; display: block !important; }
     .warning { background: #fff3cd; color: #856404; display: block !important; }
+    
+    .object-hint {
+      font-size: 12px;
+      color: #999;
+      margin-top: 6px;
+    }
+    .object-hint a {
+      color: #007AFF;
+      text-decoration: none;
+    }
+    .object-hint a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -148,17 +178,20 @@
     <h1>📝 Новый отчёт</h1>
     <p id="greeting" style="color: #666; margin: 0 0 16px 0; font-size: 14px;">Загрузка...</p>
     
-<div class="form-group">
-  <label for="objectName">🏗️ Название объекта</label>
-  <select id="objectName" required style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; font-size:14px; font-family:inherit; background:white;">
-    <option value="" disabled selected>Выберите объект...</option>
-    <option value="Новая Волна">Новая Волна</option>
-    <option value="Волна (Весна)">Волна (Весна)</option>
-    <option value="Скай-парк">Скай-парк</option>
-    <option value="Красная поляна">Красная поляна</option>
-    <option value="Турчинского">Турчинского</option>
-  </select>
-</div>
+    <div class="form-group">
+      <label for="objectName">🏗️ Название объекта</label>
+      <select id="objectName" required>
+        <option value="" disabled selected>Выберите объект...</option>
+        <option value="Новая Волна">Новая Волна</option>
+        <option value="Волна (Весна)">Волна (Весна)</option>
+        <option value="Скай-парк">Скай-парк</option>
+        <option value="Красная поляна">Красная поляна</option>
+        <option value="Турчинского">Турчинского</option>
+      </select>
+      <div class="object-hint">
+        Нет нужного объекта? <a href="#" onclick="suggestObject(event)">Предложить новый</a>
+      </div>
+    </div>
     
     <div class="form-group">
       <label for="reportDate">📅 Дата</label>
@@ -199,13 +232,23 @@
   </div>
 
   <script>
-    const VERCEL_URL = 'https://max-report-bot.vercel.app/api/bot';
+    // ⚠️ Замените на ваш реальный URL после деплоя
+    // Для локальных тестов: 'http://localhost:3000'
+    const VERCEL_URL = 'https://ВАШ_ПРОЕКТ.vercel.app/api/bot';
+    
     let currentPhotosBase64 = [];
     const MAX_PHOTOS = 10;
     let workItemCount = 0;
     
+    // Ключи для localStorage
+    const STORAGE_KEYS = {
+      LAST_OBJECT: 'max_report_last_object',
+      CUSTOM_OBJECTS: 'max_report_custom_objects'
+    };
+    
     document.addEventListener('DOMContentLoaded', function() {
       initApp();
+      loadLastObject();
       addWorkItem();
     });
     
@@ -224,6 +267,102 @@
         day: 'numeric', month: 'long', year: 'numeric', weekday: 'long'
       });
       document.getElementById('reportDate').value = dateStr;
+    }
+    
+    // 🔹 Загрузка последнего выбранного объекта из localStorage
+    function loadLastObject() {
+      const lastObject = localStorage.getItem(STORAGE_KEYS.LAST_OBJECT);
+      const select = document.getElementById('objectName');
+      
+      if (lastObject) {
+        // Проверяем, есть ли значение в списке
+        const option = [...select.options].find(opt => opt.value === lastObject);
+        if (option) {
+          select.value = lastObject;
+        } else {
+          // Если это кастомный объект — добавляем его в список
+          addCustomOption(select, lastObject);
+          select.value = lastObject;
+        }
+      }
+    }
+    
+    // 🔹 Добавление кастомного объекта в список
+    function addCustomOption(select, value) {
+      // Проверяем, нет ли уже такого варианта
+      if ([...select.options].some(opt => opt.value === value)) {
+        return;
+      }
+      
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = value + ' ✨';
+      option.style.fontStyle = 'italic';
+      option.style.color = '#007AFF';
+      select.appendChild(option);
+    }
+    
+    // 🔹 Предложение нового объекта
+    function suggestObject(e) {
+      e.preventDefault();
+      const select = document.getElementById('objectName');
+      const current = select.value;
+      
+      const suggestion = prompt(
+        'Введите название нового объекта:', 
+        current && current !== 'Выберите объект...' ? current : ''
+      );
+      
+      if (suggestion?.trim()) {
+        const cleanName = suggestion.trim();
+        
+        // Добавляем в список
+        addCustomOption(select, cleanName);
+        select.value = cleanName;
+        
+        // Сохраняем в localStorage
+        saveLastObject(cleanName);
+        
+        // Сохраняем в список кастомных объектов (для будущих сессий)
+        saveCustomObject(cleanName);
+        
+        showStatus(`✅ "${cleanName}" добавлен в список`, 'success');
+        setTimeout(() => document.getElementById('status').className = '', 2500);
+      }
+    }
+    
+    // 🔹 Сохранение последнего объекта
+    function saveLastObject(value) {
+      if (value) {
+        localStorage.setItem(STORAGE_KEYS.LAST_OBJECT, value);
+      }
+    }
+    
+    // 🔹 Сохранение кастомного объекта
+    function saveCustomObject(value) {
+      try {
+        const custom = JSON.parse(localStorage.getItem(STORAGE_KEYS.CUSTOM_OBJECTS) || '[]');
+        if (!custom.includes(value)) {
+          custom.push(value);
+          localStorage.setItem(STORAGE_KEYS.CUSTOM_OBJECTS, JSON.stringify(custom));
+        }
+      } catch (e) {
+        console.warn('Не удалось сохранить кастомный объект:', e);
+      }
+    }
+    
+    // 🔹 Загрузка кастомных объектов при старте
+    function loadCustomObjects() {
+      try {
+        const select = document.getElementById('objectName');
+        const custom = JSON.parse(localStorage.getItem(STORAGE_KEYS.CUSTOM_OBJECTS) || '[]');
+        
+        for (const name of custom) {
+          addCustomOption(select, name);
+        }
+      } catch (e) {
+        console.warn('Не удалось загрузить кастомные объекты:', e);
+      }
     }
     
     function addWorkItem() {
@@ -340,20 +479,24 @@
     }
     
     async function sendReport() {
-      const objectName = document.getElementById('objectName').value.trim();
+      const objectSelect = document.getElementById('objectName');
+      const objectName = objectSelect.value.trim();
       const date = document.getElementById('reportDate').value;
       const itr = parseInt(document.getElementById('itrCount').value) || 0;
       const workers = parseInt(document.getElementById('workersCount').value) || 0;
       const works = getWorksData();
       
-      if (!objectName) {
-        showStatus('⚠️ Введите название объекта', 'error');
+      if (!objectName || objectName === 'Выберите объект...') {
+        showStatus('⚠️ Выберите название объекта', 'error');
         return;
       }
       if (works.length === 0) {
         showStatus('⚠️ Добавьте хотя бы одну работу', 'error');
         return;
       }
+      
+      // Сохраняем выбор объекта
+      saveLastObject(objectName);
       
       const saveBtn = document.getElementById('saveBtn');
       saveBtn.disabled = true;
@@ -407,8 +550,7 @@
             window.WebApp.HapticFeedback.notificationOccurred('success');
           }
           
-          // Очистка формы
-          document.getElementById('objectName').value = '';
+          // Очистка формы (кроме объекта — он сохранится)
           document.getElementById('itrCount').value = '';
           document.getElementById('workersCount').value = '';
           document.getElementById('worksList').innerHTML = '';
