@@ -148,10 +148,17 @@
     <h1>📝 Новый отчёт</h1>
     <p id="greeting" style="color: #666; margin: 0 0 16px 0; font-size: 14px;">Загрузка...</p>
     
-    <div class="form-group">
-      <label for="objectName">🏗️ Название объекта</label>
-      <input type="text" id="objectName" placeholder="Например: Новая Волна">
-    </div>
+<div class="form-group">
+  <label for="objectName">🏗️ Название объекта</label>
+  <select id="objectName" required style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; font-size:14px; font-family:inherit; background:white;">
+    <option value="" disabled selected>Выберите объект...</option>
+    <option value="Новая Волна">Новая Волна</option>
+    <option value="Волна (Весна)">Волна (Весна)</option>
+    <option value="Скай-парк">Скай-парк</option>
+    <option value="Красная поляна">Красная поляна</option>
+    <option value="Турчинского">Турчинского</option>
+  </select>
+</div>
     
     <div class="form-group">
       <label for="reportDate">📅 Дата</label>
